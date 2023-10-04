@@ -1,0 +1,16 @@
+{
+  "short_name": "NextPWA",
+  "name": "My Next.js PWA",
+  "icons": [
+    {
+      "src": "/leafbox_sm.svg",
+      "sizes": "35x35",
+      "type": "image/svg"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#FFFFFF"
+}
