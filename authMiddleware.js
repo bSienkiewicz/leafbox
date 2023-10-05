@@ -3,12 +3,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { validate } from "./lib/db";
+import { useTokenStore } from "./store/zustand";
 
 export function checkAuth(Component) {
   const AuthenticatedComponent = (props) => {
     const [authenticated, setAuthenticated] = useState(false);
     const router = useRouter();
     const token = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    const setToken = useTokenStore((state) => state.setToken);
+
+    useEffect (() => {
+      setToken(token);
+    }, [token]);
 
     useEffect(() => {
       if (!token) {

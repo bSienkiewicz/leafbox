@@ -12,10 +12,17 @@ module.exports = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      boxShadow: {
+        'spot': "inset 0.5px 1px 1px 0 hsla(0,0%,100%,.125);",
+        'spot-down': "inset -0.5px -1px 1px 0 hsla(0,0%,100%,.125);"
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'fade-out': 'fadeOut 0.3s ease-in-out',
-        'pop-in': 'popIn 0.5s ease-in-out',
+        'pop-in': 'popIn 0.5s ease-out forwards',
+        'pop-out': 'popOut 0.5s ease-out forwards',
+        'fill': 'fill 0.5s ease-in-out forwards',
+        'bg': 'zoomOut 1s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -27,8 +34,24 @@ module.exports = {
           '100%': { opacity: 0 },
         },
         popIn: {
-          '0%': { transform: 'translateX(-20px)', opacity: 0 },
+          '0%': { transform: 'translateY(12px)', opacity: 0 },
           '100%': { transform: 'translateX(0px)', opacity: 1 },
+        },
+        popOut: {
+          '0%': { transform: 'translateX(0px)', opacity: 1 },
+          '100%': { transform: 'translateY(12px)', opacity: 0 },
+        },
+        fill: {
+          '0%': { width: '0%' },
+          '100%': { width: '100%' },
+        },
+        zoomOut: {
+          '0%': { transform: 'scale(1.15)', opacity: 0 },
+          '100%': { transform: 'scale(1.1)', opacity: 1 },
+        },
+        blurIn: {
+          '0%': { filter: 'blur(0px)'},
+          '100%': { filter: 'blur(10px)' },
         },
       },
     },

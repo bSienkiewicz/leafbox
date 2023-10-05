@@ -1,11 +1,12 @@
 import React from "react";
 // import { Data } from "../lib/data";
 import { Line } from "react-chartjs-2";
+import annotationPlugin from 'chartjs-plugin-annotation';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Filler, Tooltip, createLinearGradient } from 'chart.js';
  
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, annotationPlugin);
 
-const Chart = ({data}) => {
+const Chart = ({data, min, max}) => {
   const options = {
     maintainAspectRatio: false,
     aspectRatio: undefined,
@@ -16,6 +17,24 @@ const Chart = ({data}) => {
           size: 12,
           family: "Inter",
           weight: "bold"
+        }
+      },
+      annotation: {
+        annotations: {
+          line1: {
+            type: 'line',
+            yMin: min,
+            yMax: min,
+            borderColor: 'rgb(255, 99, 132, 0.2)',
+            borderWidth: 2,
+          },
+          line2: {
+            type: 'line',
+            yMin: max,
+            yMax: max,
+            borderColor: 'rgba(96, 100, 250, 0.2)',
+            borderWidth: 2,
+          }
         }
       },
       tooltip: {

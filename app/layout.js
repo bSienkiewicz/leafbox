@@ -1,13 +1,15 @@
-import dynamic from "next/dynamic";
 import "./globals.css";
-import { Inter, Montserrat } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-const Navbar = dynamic(() => import("../components/Navbar"), {ssr : false});
-import WebSocketContext, { WebSocketProvider } from '../lib/MessageContext';
+import Sidebar from "@/components/Sidebar";
+import Background from "@/components/Background";
+import WebSocketProvider from "../lib/MessageContext";
 
-import { config } from '@fortawesome/fontawesome-svg-core'
-import '@fortawesome/fontawesome-svg-core/styles.css'
-config.autoAddCss = false
+import { config } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+import Searchbar from "@/components/Searchbar";
+import Loader from "@/components/Loader/Loader";
+config.autoAddCss = false;
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,26 +22,29 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${inter.className} max-h-screen h-screen relative flex flex-col`}
+        className={`${inter.className} max-h-screen h-screen relative flex p-8 gap-3 overflow-hidden`}
       >
-        <Navbar />
-
-        <main className="overflow-auto h-full bg-white text-black flex-1">
-          <div>
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                style: {
-                  background: "#222",
-                  color: "#fff",
-                },
-              }}
-            />
+        <Background />
+        <Loader />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "#222",
+              color: "#fff",
+              borderRadius: "99px",
+            },
+            position: "top-center",
+          }}
+        />
+        <WebSocketProvider />
+        <div className="max-w-7xl mx-auto flex-1 flex gap-3">
+          <Sidebar />
+          <div className="h-full flex-1 flex flex-col gap-3">
+            <Searchbar />
+            <main className="flex-1 overflow-y-auto">{children}</main>
           </div>
-          <WebSocketProvider>
-            {children}
-          </WebSocketProvider>
-        </main>
+        </div>
       </body>
     </html>
   );

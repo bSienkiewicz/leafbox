@@ -32,3 +32,7 @@ main {
   /* color: var(--foreground-hex); */
   /* background-color: var(--background-hex); */
 }
+
+body{
+  background: #000;
+}
