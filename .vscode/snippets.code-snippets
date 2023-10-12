@@ -22,7 +22,7 @@
       "\t\t\"use server\";",
       "",
       "\t\tconst res = await fetch(",
-      "\t\t\t`http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/$ENDPOINT`,",
+      "\t\t\t`${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/$ENDPOINT`,",
       "\t\t\t{",
       "\t\t\t\tmethod: \"$POST\",",
       "\t\t\t\theaders: {",

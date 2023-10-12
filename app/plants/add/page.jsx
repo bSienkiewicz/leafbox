@@ -6,7 +6,7 @@ const page = () => {
     "use server";
 
     const res = await fetch(
-      `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
+      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
       {
         method: "POST",
         headers: {
@@ -25,7 +25,7 @@ const page = () => {
       "use server";
   
       const res = await fetch(
-        `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants/lookup/${species}`
+        `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants/lookup/${species}`
       );
       
       const json = await res.json();

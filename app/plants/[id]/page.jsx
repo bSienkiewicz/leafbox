@@ -8,7 +8,7 @@ const page = async({ params }) => {
     "use server";
 
     const res = await fetch(
-      `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants/${params.id}`,
+      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants/${params.id}`,
       {
         method: "PUT",
         headers: {
@@ -37,7 +37,7 @@ const page = async({ params }) => {
   });
 
   return (
-    <div className="relative flex flex-col gap-3">
+    <div className="h-full w-full">
       {error && (
         <div className="w-full h-full flex justify-center items-center">
           <Error

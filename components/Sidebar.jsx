@@ -13,12 +13,21 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faHubspot } from "@fortawesome/free-brands-svg-icons";
 import moment from "moment-timezone";
-import Card from "../Cards/Card";
+import { Card, CardContent, CardHeader } from "./ui/card";
 import toast from "react-hot-toast";
 import { useWeatherStore, useAppStore, useWsStore } from "@/store/zustand";
 import axios from "axios";
 import { useCookies } from "next-client-cookies";
-import { useThemeContext } from "@/utils/ThemeProvider";
+import { useThemeContext } from "@/utils/AppContextProvider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { MoonIcon, SunIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const links = [
   {
@@ -40,6 +49,7 @@ const links = [
 
 const Sidebar = () => {
   const [width, setWidth] = useState(null);
+  const { setTheme } = useTheme();
 
   const { isSidebarOpen, toggleSidebar, isMobile } = useThemeContext();
 
@@ -83,7 +93,7 @@ const Sidebar = () => {
   }, [token]);
 
   const checkGeolocation = () => {
-    console.log("Checking geolocation")
+    console.log("Checking geolocation");
     navigator.geolocation.getCurrentPosition((position) => {
       setLocation(position.coords);
       if (weather != null || token == null) return;
@@ -116,13 +126,17 @@ const Sidebar = () => {
           <div className="relative h-14 flex gap-3">
             <div className="h-14 w-14 flex md:hidden" onClick={toggleSidebar}>
               <Card
-                cClass={"h-full w-full flex justify-center items-center p-0"}
+                className={
+                  "h-full w-full flex justify-center items-center p-0 cursor-pointer"
+                }
               >
                 <FontAwesomeIcon icon={faBars} />
               </Card>
             </div>
             <Card
-              cClass={"flex-1 flex items-center flex-row flex-nowrap gap-3"}
+              className={
+                "flex-1 !flex items-center flex-row flex-nowrap gap-3 w-full p-6"
+              }
             >
               <p className="text-3xl font-bold">
                 {moment(currentTime).format("HH:mm")}
@@ -134,12 +148,14 @@ const Sidebar = () => {
           </div>
           {weather && (
             <Card>
-              <div className="flex flex-col gap-3">
+              <CardHeader>
                 <p className="text-sm font-medium flex items-center gap-2">
                   <FontAwesomeIcon icon={faLocationDot} />
                   {weather.location.name}
                 </p>
-                <span className="text-5xl flex">
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                <span className="text-5xl flex gap-2">
                   {weather.current.temp_c.toFixed(0)}
                   <span className="text-lg align-top">°C</span>
                   <span className="flex flex-col justify-around ms-2">
@@ -154,7 +170,7 @@ const Sidebar = () => {
                     <FontAwesomeIcon icon={faCloudMoon} />
                   </span>
                 </span>
-                <div className="grid grid-cols-4">
+                <div className="grid grid-cols-3">
                   <div className="flex flex-col items-center">
                     <p className="text-xs font-light uppercase">Humidity</p>
                     <p className="text-sm font-bold">
@@ -165,12 +181,6 @@ const Sidebar = () => {
                     <p className="text-xs font-light uppercase">Precip.</p>
                     <p className="text-sm font-bold">
                       {weather.current.precip_mm}mm
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <p className="text-xs font-light uppercase">Pressure</p>
-                    <p className="text-sm font-bold">
-                      {weather.current.pressure_mb}hPa
                     </p>
                   </div>
                   <div className="flex flex-col items-center">
@@ -189,29 +199,23 @@ const Sidebar = () => {
                     </p>
                   </div>
                 </div>
-              </div>
+              </CardContent>
             </Card>
           )}
 
-          {links.map(({ href, text, svg }, i) => (
-            <Link
-              key={i}
-              href={href}
-              className="flex"
-              onClick={handleLinkClick}
-            >
-              <Card
-                cClass={`flex items-center w-full gap-3 py-6 px-4 ${
-                  currentRoute === href.split("/")[1]
-                    ? "!bg-neutral-500/30"
-                    : "bg-neutral-50/0"
-                } backdrop-blur-0`}
+          <Card className={`flex flex-col w-full p-6`}>
+            {links.map(({ href, text, svg }, i) => (
+              <Link
+                key={i}
+                href={href}
+                className="flex gap-3 items-center border-b pb-3 pt-3 first:pt-0 last:pb-0 last:border-0 border-neutral-600"
+                onClick={handleLinkClick}
               >
                 <FontAwesomeIcon icon={svg} />
                 <span className="">{text}</span>
-              </Card>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </Card>
           {wsMessage && (
             <Card title={"System status"}>
               <div className="grid grid-cols-2 gap-3">
@@ -233,8 +237,28 @@ const Sidebar = () => {
               </div>
             </Card>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <SunIcon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                Light
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                Dark
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                System
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <Card cClass={"py-2 !fixed bottom-0 left-0 w-full"}>
+        <Card className={"py-2 px-6 !fixed bottom-0 left-0 w-full"}>
           <div className="text-xs text-gray-300 flex justify-between gap-2">
             <div className="flex items-center gap-2">
               <span
@@ -252,7 +276,7 @@ const Sidebar = () => {
               href={"/logout"}
               className="rounded-full bg-black/20 px-2 py-1"
             >
-              Logout
+              <Button className="text-xs">Logout</Button>
             </Link>
           </div>
         </Card>

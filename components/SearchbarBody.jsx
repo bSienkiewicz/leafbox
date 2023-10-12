@@ -1,12 +1,12 @@
 "use client";
-import { useThemeContext } from "@/utils/ThemeProvider";
+import { useThemeContext } from "@/utils/AppContextProvider";
 import { faBars, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCookies } from "next-client-cookies";
 import React, { use, useEffect, useState } from "react";
-import Card from "../Cards/Card";
+import Card from "./Cards/Card";
 
-const SidebarBody = ({ fetchPlants, fetchDevices }) => {
+const SearchbarBody = ({ fetchPlants, fetchDevices }) => {
   const [plants, setPlants] = useState([]);
   const [devices, setDevices] = useState([]);
   const [results, setResults] = useState({
@@ -115,4 +115,4 @@ const SidebarBody = ({ fetchPlants, fetchDevices }) => {
   );
 };
 
-export default SidebarBody;
+export default SearchbarBody;

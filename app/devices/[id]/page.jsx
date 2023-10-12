@@ -6,7 +6,7 @@ const page = async ({ params }) => {
     "use server";
 
     const res = await fetch(
-      `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices/${params.id}`,
+      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices/${params.id}`,
       {
         method: "PUT",
         headers: {
@@ -20,12 +20,12 @@ const page = async ({ params }) => {
   };
 
   const devices = await fetch(
-    `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices`,
+    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices`,
     { cache: "no-store" }
   ).then((res) => res.json());
 
   const plants = await fetch(
-    `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
+    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
     { cache: "no-store" }
   ).then((res) => res.json());
 

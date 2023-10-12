@@ -8,11 +8,11 @@ const page = async () => {
   await useAuth();
   let error = false;
   const plants = await fetch(
-    `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
+    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
     { cache: "no-store" }
   ).then((res) => res.json());
   const devices = await fetch(
-    `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices`,
+    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices`,
     { cache: "no-store" }
   )
     .then((res) => res.json())

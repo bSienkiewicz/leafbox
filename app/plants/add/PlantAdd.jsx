@@ -6,6 +6,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { Title, TitleContent, TitleOption } from "@/components/Title";
+import { Button } from "@/components/ui/button";
 
 const PlantAdd = ({ addPlant, plantLookup }) => {
   const router = useRouter();
@@ -94,16 +96,14 @@ const PlantAdd = ({ addPlant, plantLookup }) => {
 
   return (
     <div className="relative flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="font-medium">Plants</p>
-        <button
-          className="hover:bg-green-500 bg-green-500/50 transition-all flex items-center justify-center rounded-full px-3 py-1 font-medium hover:text-black"
-          onClick={handleSubmit}
-        >
-          <FontAwesomeIcon icon={faPlus} className="me-2" />
-          Add this plant
-        </button>
-      </div>
+    <Title>
+      <TitleContent>Plants</TitleContent>
+      <TitleOption>
+        <Button>
+          Submit
+        </Button>
+      </TitleOption>
+    </Title>
       <div className="flex flex-col gap-3">
         <Card>
           <div className="grid grid-cols-[130px,1fr] gap-3 items-center">

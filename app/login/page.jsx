@@ -12,7 +12,7 @@ const page = async () => {
     "use server";
 
     const res = await fetch(
-      `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/login`,
+      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/login`,
       {
         method: "POST",
         headers: {
@@ -29,7 +29,7 @@ const page = async () => {
     "use server";
 
     const res = await fetch(
-      `http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/register`,
+      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/register`,
       {
         method: "POST",
         headers: {

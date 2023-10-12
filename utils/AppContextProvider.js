@@ -1,9 +1,10 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from 'react';
+import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-const ThemeContext = createContext({})
+const AppContext = createContext({})
 
-export const ThemeProvider = ({ children }) => {
+export const AppContextProvider = ({ children, ...props }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -30,11 +31,13 @@ export const ThemeProvider = ({ children }) => {
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ isSidebarOpen, toggleSidebar, setIsSidebarOpen, isMobile, setIsMobile }}>
-      {children}
-    </ThemeContext.Provider>
+    <NextThemesProvider {...props}>
+      <AppContext.Provider value={{ isSidebarOpen, toggleSidebar, setIsSidebarOpen, isMobile, setIsMobile }}>
+        {children}
+      </AppContext.Provider>
+    </NextThemesProvider>
   );
 };
 
-export const useThemeContext = () => useContext(ThemeContext);
-export default ThemeProvider;
+export const useThemeContext = () => useContext(AppContext);
+export default AppContextProvider;

@@ -10,7 +10,7 @@ export async function useAuth() {
   }
   
   
-  const res = await fetch(`http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/validate`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/validate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

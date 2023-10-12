@@ -1,10 +1,12 @@
 import { getPlants } from "@/lib/db";
 import { useAuth } from "@/authMiddleware";
-import Card from "@/components/Cards/Card";
+import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import moment from "moment-timezone";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { TitleContent, TitleOption, Title } from "@/components/Title";
+import { Button } from "@/components/ui/button";
 
 const page = async () => {
   await useAuth();
@@ -12,29 +14,24 @@ const page = async () => {
 
   return (
     <div className="relative h-full">
-      {/* {loading && <Loader />} */}
-      <div className="flex items-center justify-between">
-        <p className="font-medium mb-3">Plants</p>
-        <Link
-          href={`/plants/add`}
-          className="hover:bg-white/10 transition-all flex items-center justify-center rounded"
-        >
-          <FontAwesomeIcon icon={faPlus} className="p-2" />
-        </Link>
-      </div>
-      {/* {err && <Error err={"Couldn't retrieve plants"} />} */}
+      <Title>
+        <TitleContent>Plants</TitleContent>
+        <TitleOption>
+          <Link href="/plants/add" passHref>
+            <Button>
+              <FontAwesomeIcon icon={faPlus} className="pr-2" />
+              Add
+            </Button>
+          </Link>
+        </TitleOption>
+      </Title>
       {plants && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {plants?.map((plant, i) => (
-            <Link
-              href={`/plants/${plant.plant_id}`}
-              key={i}
-              prefetch={true}
-              className="h-48"
-            >
-              <Card cClass="w-full h-full flex flex-col items-center gap-3">
+            <Link href={`/plants/${plant.plant_id}`} key={i}>
+              <Card className="w-full h-full flex p-3 gap-3 overflow-hidden text-ellipsis">
                 <div
-                  className="w-20 h-20 min-w-20 min-h-20 rounded-lg"
+                  className="w-16 md:w-32 h-16 min-h-[64px] md:min-h-[128px] rounded-lg relative"
                   style={
                     plant.image
                       ? {
@@ -44,33 +41,26 @@ const page = async () => {
                           background: `url(/placeholder.webp) center center / cover no-repeat`,
                         }
                   }
-                ></div>
-                <div className="flex-1 w-full">
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-3 items-center">
-                      <h1 className="text-xl">{plant.plant_name}</h1>
-                      <p className="text-xs text-gray-400">
-                        {plant.device_name}
-                      </p>
+                >
+                  {plant.last_moisture && (
+                    <div
+                      className={`absolute isolate bottom-1 left-1 bg-white text-black font-bold overflow-hidden text-xs px-4 py-1 rounded-sm`}
+                    >
+                      <div
+                        className="absolute top-0 left-0 bg-blue-300 h-full -z-10"
+                        style={{ width: `${plant.last_moisture}%` }}
+                      ></div>
+                      <p className="z-10">55%</p>
                     </div>
-                    {plant.last_moisture_ts ? (
-                      <p>{plant.last_moisture}%</p>
-                    ) : (
-                      ""
-                    )}
-                  </div>
-                  <div className="h-full flex flex-col text-xs z-20">
-                    <div className="w-full h-2 rounded-full shadow-spot bg-black/20 my-2 relative overflow-hidden">
-                      {plant.last_moisture && (
-                        <div
-                          className="absolute top-0 left-0 h-full w-full"
-                          style={{ width: `${plant.last_moisture}%` }}
-                        >
-                          <div className="bg-blue-500/25 shadow-spot animate-fill absolute h-full w-0"></div>
-                        </div>
-                      )}
-                    </div>
-                    <p>
+                  )}
+                </div>
+                <div className="flex flex-col flex-1 justify-between">
+                  <h3 className="text-3xl font-medium">{plant.plant_name}</h3>
+                  <div className="">
+                    <p className="text-xs mt-2 tracking-normal">
+                      Last watering:
+                    </p>
+                    <p className="text-xs text-gray-400">
                       {plant.last_moisture_ts
                         ? moment(plant.last_moisture_ts).fromNow() +
                           " (" +

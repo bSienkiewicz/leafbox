@@ -51,8 +51,11 @@ const Chart = ({data, min, max}) => {
         xAlign: "center",
         yAlign: "center",
         displayColors: false,
-        cornerRadius: 15,
+        cornerRadius: 8,
         backgroundColor: "rgba(0,0,0,1)",
+        padding: 8,
+        borderWidth: 1,
+        borderColor: "hsl(240 3.7% 15.9%)",
         callbacks: {
           title: function (tooltipItem, data) {
             return "";
@@ -74,8 +77,10 @@ const Chart = ({data, min, max}) => {
     },
     elements: {
       point: {
-        radius: 3,
+        radius: 2,
         hitRadius: 3,
+        borderColor: "rgba(96, 165, 250, 1)",
+        hoverRadius: 15,
       },
       line: {
         tension: 0.3,
@@ -126,7 +131,7 @@ const Chart = ({data, min, max}) => {
     },
   };
   return (
-    <Line data={data} className="w-full h-full" options={options} />
+    <Line data={data} options={options} />
   )
 }
 

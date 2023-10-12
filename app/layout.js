@@ -1,20 +1,17 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import Sidebar from "@/components/Sidebar/Sidebar";
 import WebSocketProvider from "../lib/MessageContext";
 
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import Searchbar from "@/components/Searchbar";
-import Loader from "@/components/Loader/Loader";
 import { cookies } from "next/headers";
 import { ClientCookiesProvider } from "@/utils/CookieProvider";
-import BottomNavigation from "@/components/BottomNavigation";
-import ThemeProvider from "@/utils/ThemeProvider";
+import AppContextProvider from "@/utils/AppContextProvider";
 import { Suspense } from "react";
 import Loading from "./loading";
-import MainContent from "@/components/MainContent";
+import Navbar from "@/components/Navbar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 config.autoAddCss = false;
 
@@ -40,26 +37,32 @@ export default function RootLayout({ children }) {
           position="top-right"
           toastOptions={{
             style: {
-              background: "#222",
+              background: "#000",
               color: "#fff",
-              borderRadius: "99px",
+              border: "1px solid 	#27272a",
+              borderRadius: "0.5rem",
+              padding: "1.5rem",
             },
-            position: "top-center",
+            position: "top-right",
           }}
         />
         <WebSocketProvider />
         <ClientCookiesProvider value={cookies().getAll()}>
-          <ThemeProvider>
-            <div className="max-w-7xl w-full mx-auto grid md:grid-cols-[300px,1fr] grid-cols-1 gap-3 md:p-8 p-2 box-border">
-              <Sidebar />
-              <MainContent>
-                <Searchbar />
-                <main className="w-full overflow-y-auto pb-safe px-safe">
-                  <Suspense fallback={<Loading />}>{children}</Suspense>
-                </main>
-              </MainContent>
+          <AppContextProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+          <TooltipProvider>
+            <div className="w-full mx-auto flex flex-col box-border">
+              <Navbar />
+              <main className="max-w-7xl w-full mx-auto flex-1 space-y-4 p-8 pt-6 overflow-y-auto">
+                <Suspense fallback={<Loading />}>{children}</Suspense>
+              </main>
             </div>
-          </ThemeProvider>
+          </TooltipProvider>
+          </AppContextProvider>
         </ClientCookiesProvider>
       </body>
     </html>

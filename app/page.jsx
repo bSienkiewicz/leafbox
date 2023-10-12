@@ -1,33 +1,27 @@
-import { useAuth } from '@/authMiddleware';
-import { cookies } from 'next/headers';
+import { useAuth } from "@/authMiddleware";
+import { Title, TitleContent, TitleOption } from "@/components/Title";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cookies } from "next/headers";
 
 const Home = async () => {
-  const user = cookies().get('user')
+  const user = cookies().get("user");
   await useAuth();
 
-  const greetings = [
-    'Hello',
-    'Hi',
-    'Hey',
-    'Howdy',
-    'Hola',
-    'Namaste',
-    'Salaam',
-    'Shalom',
-    'What\'s up',
-    'How\'s your day',
-    'How\'s your day going',
-  ]
-  
   return (
-    <div className="h-full md:grid md:grid-cols-12 flex flex-col gap-3">
+    <div className="">
+      <Title className={"col-span-12"}>
+        <TitleContent>Dashboard</TitleContent>
+      </Title>
       <div className="col-span-4">
-        siema
+        <Card>
+          <CardHeader>
+            <CardTitle>Elo tytuł</CardTitle>
+          </CardHeader>
+          <CardContent>elówina</CardContent>
+        </Card>
       </div>
     </div>
-  )
-}
-
-
+  );
+};
 
 export default Home;
