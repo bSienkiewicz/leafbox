@@ -1,48 +1,48 @@
+"use client"
 import React from "react";
 import { generateRandomString } from "@/utils/utils";
+import bcrypt from "bcryptjs";
+import toast from "react-hot-toast";
+import { redirect, useRouter } from "next/navigation";
 
-const SetupBox = ({setRecovery}) => {
+const saltRounds = 10;
+
+const SetupBox = ({register}) => {
   const [isPasswordLongEnough, setIsPasswordLongEnough] = React.useState(false);
   const [isPasswordNumber, setIsPasswordNumber] = React.useState(false);
   const [isPasswordSpecial, setIsPasswordSpecial] = React.useState(false);
+  const router = useRouter();
 
-  function handleSetupSubmit(e) {
+  async function handleSetupSubmit(e) {
     e.preventDefault();
     if (!isPasswordLongEnough || !isPasswordNumber || !isPasswordSpecial)
       return;
 
     const hashedPassword = bcrypt.hashSync(e.target.password.value, saltRounds);
-    const recovery =
-      "leafbox-" +
-      generateRandomString(4) +
-      "-" +
-      generateRandomString(4) +
-      "-" +
-      generateRandomString(4);
-    setRecovery(recovery);
 
-    const hashedRecovery = bcrypt.hashSync(recovery, saltRounds);
     let data = {
       name: e.target.name.value,
       username: e.target.username.value,
       password: hashedPassword,
-      recovery: hashedRecovery,
     };
 
-    register(data)
+    await register(data)
       .then((res) => {
-        if (res.status === 200) {
-          setStep(3);
-        } else if (res.status === 409) {
+        if (res.code === 200) {
+          toast.success("Registered successfully");
+          toast.success("Redirecting to login page");
+          // refresh window
+          window.location.reload();
+        } else if (res.code === 409) {
           toast.error("Username already taken");
         } else {
           console.error(res);
-          toast.error("Error registering");
+          toast.error(res.message);
         }
       })
       .catch((err) => {
-        console.error(err);
-        throw new Error(err);
+        toast.error("Unknown error");
+        toast.error("Error registering");
       });
   }
 

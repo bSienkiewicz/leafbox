@@ -1,27 +1,15 @@
-"use client";
-import { useEffect } from "react";
+"use client"
+import { redirect} from "next/navigation";
+import { useCookies } from "next-client-cookies";
+import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import { useTokenStore } from "@/store/zustand";
-import Card from "@/components/Cards/Card";
-import toast from "react-hot-toast";
+import { use } from "react";
 
 const LogoutPage = () => {
   const router = useRouter();
-  const removeToken = useTokenStore((s) => s.removeToken);
-
-  useEffect(() => {
-    localStorage.removeItem("jwt");
-    localStorage.removeItem("user");
-    removeToken();
-    router.push("/login");
-    toast.success("Logged out successfully");
-  }, []);
-
-  return (
-    <div className="w-full h-full flex justify-center items-center">
-      <Card cClass="text-center text-xl">Logging you out...</Card>
-    </div>
-  );
+  useCookies().remove("jwt");
+  useCookies().remove("user");
+  router.replace("/login");
 };
 
 export default LogoutPage;

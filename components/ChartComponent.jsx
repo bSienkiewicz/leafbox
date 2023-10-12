@@ -1,4 +1,5 @@
-import React from "react";
+"use client"
+import React, { useEffect } from "react";
 // import { Data } from "../lib/data";
 import { Line } from "react-chartjs-2";
 import annotationPlugin from 'chartjs-plugin-annotation';
@@ -7,6 +8,10 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, annotationPlugin);
 
 const Chart = ({data, min, max}) => {
+  useEffect(() => {
+    console.log(data)
+  }, [])
+
   const options = {
     maintainAspectRatio: false,
     aspectRatio: undefined,
@@ -27,6 +32,7 @@ const Chart = ({data, min, max}) => {
             yMax: min,
             borderColor: 'rgb(255, 99, 132, 0.2)',
             borderWidth: 2,
+            borderDash: [5, 5],
           },
           line2: {
             type: 'line',
@@ -34,7 +40,8 @@ const Chart = ({data, min, max}) => {
             yMax: max,
             borderColor: 'rgba(96, 100, 250, 0.2)',
             borderWidth: 2,
-          }
+            borderDash: [5, 5],
+          },
         }
       },
       tooltip: {

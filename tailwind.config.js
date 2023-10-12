@@ -22,7 +22,9 @@ module.exports = {
         'pop-in': 'popIn 0.5s ease-out forwards',
         'pop-out': 'popOut 0.5s ease-out forwards',
         'fill': 'fill 0.5s ease-in-out forwards',
-        'bg': 'zoomOut 1s ease-out forwards',
+        'zoom-out': 'zoomOut 0.3s ease-in-out forwards',
+        'zoom-in': 'zoomIn 0.3s ease-in-out forwards',
+        'slide-in': 'slideIn 0.5s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -46,15 +48,23 @@ module.exports = {
           '100%': { width: '100%' },
         },
         zoomOut: {
-          '0%': { transform: 'scale(1.15)', opacity: 0 },
-          '100%': { transform: 'scale(1.1)', opacity: 1 },
+          '0%': { transform: 'scale(1)', opacity: 1 },
+          '100%': { transform: 'scale(0.8)', opacity: 0 },
+        },
+        zoomIn: {
+          '0%': { transform: 'scale(0.8)', opacity: 0 },
+          '100%': { transform: 'scale(1)', opacity: 1 },
         },
         blurIn: {
           '0%': { filter: 'blur(0px)'},
           '100%': { filter: 'blur(10px)' },
         },
+        slideIn: {
+          '0%': { transform: 'translateX(100%)'},
+          '100%': { transform: 'translateX(0%)' },
+        },
       },
     },
   },
-  plugins: [],
+	plugins: [require('tailwindcss-safe-area')],
 }

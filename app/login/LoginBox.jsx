@@ -1,50 +1,53 @@
-import { login } from "@/lib/db";
+"use client"
+
 import React from "react";
-import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import logo from "@/public/leafbox.svg"
+import logo from "@/public/leafbox.svg";
+import { useTokenStore } from "@/store/zustand";
+import { userLogin } from "@/lib/db";
+import Cookies from "js-cookie";
+import toast from "react-hot-toast";
 
-const LoginBox = () => {
+const LoginBox = ({login}) => {
   const router = useRouter();
-  function handleLoginSubmit(e) {
+  const setToken = useTokenStore((state) => state.setToken);
+
+  async function handleLoginSubmit(e) {
     e.preventDefault();
 
-    let data = {
+    const data = {
       username: e.target.username.value,
       password: e.target.password.value,
     };
+    await login(data).then(res => {
+      if (res.token) {
+        console.log('LOGGING IN...')
+        setToken(res.token);
+        Cookies.set('jwt', res.token, { expires: 7 });
+        Cookies.set('user', res.user, { expires: 7 });
+        toast.success('Logged in successfully!');
+      } else {
+        return Promise.reject("Incorrect username or password");
+      }
+    }).then(() => {
+      router.push('/');
+    }).catch(err => {
+      toast.error(err);
+    });
 
-    try {
-      login(data)
-        .then((res) => {
-          if (res.status === 200) {
-            if (window !== undefined) {
-              localStorage.setItem("jwt", res.data.token);
-              localStorage.setItem("user", res.data.user);
-            }
-            router.push("/");
-          } else if (res.status === 401) {
-            toast.error("Invalid username or password");
-          } else {
-            console.error(res);
-            toast.error("Error logging in");
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          toast.error("Error logging in");
-          throw new Error(err);
-        });
-    } catch (err) {
-      console.error(err);
-      toast.error("Error logging in");
-    }
   }
 
   return (
-    <form className="w-[400px] max-w-full" onSubmit={handleLoginSubmit}>
-      <Image src={logo} alt="Leafbox logo" width={"auto"} height={70}  className="mx-auto my-4" priority/>
+    <form className="w-[300px] max-w-full" onSubmit={handleLoginSubmit}>
+      <Image
+        src={logo}
+        alt="Leafbox logo"
+        width={"auto"}
+        height={70}
+        className="mx-auto my-4"
+        priority
+      />
       <label htmlFor="username" className="text-sm font-medium">
         Username
       </label>

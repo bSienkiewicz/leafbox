@@ -1,45 +1,25 @@
-'use client'
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { redirect } from "next/navigation";
 import { validate } from "./lib/db";
-import { useTokenStore } from "./store/zustand";
+import { cookies } from "next/headers";
 
-export function checkAuth(Component) {
-  const AuthenticatedComponent = (props) => {
-    const [authenticated, setAuthenticated] = useState(false);
-    const router = useRouter();
-    const token = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
-    const setToken = useTokenStore((state) => state.setToken);
+export async function useAuth() {
+  const token = cookies().get("jwt")
 
-    useEffect (() => {
-      setToken(token);
-    }, [token]);
+  if (!token) {
+    redirect("/logout");
+  }
+  
+  
+  const res = await fetch(`http://${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/validate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    redirect("/logout");
+  }
 
-    useEffect(() => {
-      if (!token) {
-        toast.error("You must be logged in to view this page");
-        router.push("/login");
-      } else {
-        validate(token).then((res) => {
-          setAuthenticated(true);
-        }).catch((err) => {
-          toast.error("Invalid token, please log in again");
-          router.push("/login");
-        });
-      }
-    }, []);
-
-    if (!token) {
-      return null;
-    }
-
-    if (authenticated) {
-      return <Component {...props} />;
-    } else {
-      return null;
-    }
-  };
-
-  return AuthenticatedComponent;
+  return true;
 }

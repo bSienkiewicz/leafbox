@@ -1,9 +1,10 @@
+"use client"
 import React from 'react'
 import Card from './Cards/Card'
 import { faChevronLeft, faChevronRight, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-const Error = ({err, action}) => {
+const Error = ({err, action = "refresh"}) => {
   const reloadWindow = () => {
     if (typeof window !== "undefined") {
       window.location.reload();

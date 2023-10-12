@@ -1,17 +1,10 @@
-"use client";
-import { checkAuth } from '@/authMiddleware';
-import WebSocketContext from '@/lib/MessageContext';
-import Image from 'next/image'
-import { useEffect, useState } from 'react';
-import moment from 'moment-timezone';
-import Card from '@/components/Cards/Card';
-import { useTokenStore, useWsStore } from '@/store/zustand';
+import { useAuth } from '@/authMiddleware';
+import { cookies } from 'next/headers';
 
-const Home = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [wsMessage, setWsMessage] = useState(null);
-  const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-  const {token} = useTokenStore();
+const Home = async () => {
+  const user = cookies().get('user')
+  await useAuth();
+
   const greetings = [
     'Hello',
     'Hi',
@@ -25,17 +18,11 @@ const Home = () => {
     'How\'s your day',
     'How\'s your day going',
   ]
-
-  useEffect(() => {
-    console.log('RERENDER...')
-  })
   
   return (
     <div className="h-full md:grid md:grid-cols-12 flex flex-col gap-3">
       <div className="col-span-4">
-        <Card cClass={"text-2xl"}>
-          <span className='font-medium'>Hello{" "}{user}</span>
-        </Card>
+        siema
       </div>
     </div>
   )
@@ -43,4 +30,4 @@ const Home = () => {
 
 
 
-export default checkAuth(Home);
+export default Home;
