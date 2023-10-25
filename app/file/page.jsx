@@ -1,5 +1,5 @@
-"use client"
-import React, { useState } from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 
 const Page = () => {
   const [name, setName] = useState("");
@@ -10,33 +10,22 @@ const Page = () => {
     setName(event.target.value);
   };
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    setFile(selectedFile);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(reader.result);
-    };
-    reader.readAsDataURL(selectedFile);
-  };
-
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (!file) return;
     const formData = new FormData();
-    formData.append("file", e.target.file.files[0]);
-    formData.append("name", e.target.name.value);
-    console.log(formData)
-    await fetch(`/api/upload`, {
+    formData.append("name", name);
+    formData.append("file", file);
+    const response = await fetch("http://localhost:5000/upload", {
       method: "POST",
-      body: formData
-    }).then((response) => {
-      console.log(response);
-    }).catch((error) => {
-      console.log(error);
-    });
+      body: formData,
+    }).then((res) => res.json());
+    
   };
+
+  useEffect(() => {
+    console.log(file)
+  }, [file])
 
   return (
     <form id="form" onSubmit={handleSubmit}>
@@ -52,7 +41,7 @@ const Page = () => {
       </div>
       <div className="input-group">
         <label htmlFor="file">Select file</label>
-        <input id="file" type="file" name="file" onChange={handleFileChange} />
+        <input id="file" type="file" name="file" onChange={(e) => setFile(e.target.files?.[0])} />
       </div>
       {imageUrl && (
         <div className="input-group">

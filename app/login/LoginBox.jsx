@@ -8,6 +8,10 @@ import { useTokenStore } from "@/store/zustand";
 import { userLogin } from "@/lib/db";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const LoginBox = ({login}) => {
   const router = useRouter();
@@ -44,24 +48,24 @@ const LoginBox = ({login}) => {
         src={logo}
         alt="Leafbox logo"
         width={"auto"}
-        height={70}
-        className="mx-auto my-4"
+        height={50}
+        className="mx-auto mb-6"
         priority
       />
-      <label htmlFor="username" className="text-sm font-medium">
+      <Label htmlFor="username" className="text-sm font-medium">
         Username
-      </label>
-      <input
+      </Label>
+      <Input
         type="text"
         name="username"
         id="username"
         placeholder="Enter your username"
         className="w-full rounded py-2 px-4 mb-3 text-sm bg-gray-700/20"
       />
-      <label htmlFor="password" className="text-sm font-medium">
+      <Label htmlFor="password" className="text-sm font-medium">
         Password
-      </label>
-      <input
+      </Label>
+      <Input
         type="password"
         name="password"
         id="password"
@@ -69,17 +73,17 @@ const LoginBox = ({login}) => {
         className="w-full rounded py-2 px-4 mb-3 text-sm bg-gray-700/20"
       />
       <div className="flex items-center gap-1">
-        <input type="checkbox" name="remember" id="remember" />
-        <label htmlFor="remember" className="text-sm font-medium">
+        <Checkbox name="remember" id="remember" />
+        <Label htmlFor="remember" className="text-sm font-medium">
           Don't log me out
-        </label>
+        </Label>
       </div>
-      <button
+      <Button
         type="submit"
-        className="w-full bg-black hover:bg-neutral-900 text-white rounded-full py-4 text-sm mt-4"
+        className="w-full py-4 text-sm mt-4"
       >
         Login
-      </button>
+      </Button>
     </form>
   );
 };

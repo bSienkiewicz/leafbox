@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import Card from "@/components/Cards/Card";
+import Card from "@/components/Cards/Card_OLD";
 import LoginBox from "./LoginBox";
 import SetupBox from "./SetupBox";
 import RecoveryBox from "./RecoveryBox";

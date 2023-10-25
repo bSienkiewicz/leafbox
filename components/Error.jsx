@@ -1,41 +1,55 @@
-"use client"
-import React from 'react'
-import Card from './Cards/Card'
-import { faChevronLeft, faChevronRight, faRotateRight } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+"use client";
+import React from "react";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  faChevronLeft,
+  faChevronRight,
+  faRotateRight,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button } from "./ui/button";
 
-const Error = ({err, action = "refresh"}) => {
+const Error = ({ err, action = "refresh" }) => {
   const reloadWindow = () => {
     if (typeof window !== "undefined") {
       window.location.reload();
     }
-  }
+  };
 
   const back = () => {
     if (typeof window !== "undefined") {
       window.history.back();
     }
-  }
+  };
 
   return (
-    <Card cClass="text-center text-xl flex flex-col items-center">
-      <p>{err}</p>
-      <button className="px-2 py-1 bg-green-500 text-black text-sm rounded-full mt-3 flex gap-2 items-center " onClick={action == 'refresh' ? reloadWindow : back}>
+    <Card className="max-w-[450px] w-full">
+      <CardHeader>
+        <CardTitle>Error</CardTitle>
+        <CardDescription>{err}</CardDescription>
+      </CardHeader>
+      <CardFooter className="justify-center">
         {action === "refresh" && (
-          <>
-            <FontAwesomeIcon icon={faRotateRight} className="animate-spin" />
-            <span>Refresh</span>
-          </>
+          <Button className="btn btn-primary" onClick={reloadWindow}>
+            <FontAwesomeIcon icon={faRotateRight} className="pr-2" />
+            Refresh
+          </Button>
         )}
         {action === "back" && (
-          <>
-            <FontAwesomeIcon icon={faChevronLeft} />
-            <span>Go back</span>
-          </>
+          <Button className="btn btn-primary" onClick={back}>
+            <FontAwesomeIcon icon={faChevronLeft} className="pr-2" />
+            Back
+          </Button>
         )}
-      </button>
+      </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-export default Error
+export default Error;

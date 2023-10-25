@@ -1,4 +1,4 @@
-import { getPlants } from "@/lib/db";
+import { getPlants } from "@/app/_actions";
 import { useAuth } from "@/authMiddleware";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
@@ -7,56 +7,90 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { TitleContent, TitleOption, Title } from "@/components/Title";
 import { Button } from "@/components/ui/button";
+import Error from "@/components/Error";
 
 const page = async () => {
   await useAuth();
-  const plants = await getPlants();
+  let error = false;
+  const plants = await getPlants()
+    .then((res) => {
+      return res.data;
+    })
+    .catch((err) => {
+      error = true;
+    });
 
-  return (
-    <div className="relative h-full">
-      <Title>
-        <TitleContent>Plants</TitleContent>
-        <TitleOption>
-          <Link href="/plants/add" passHref>
-            <Button>
-              <FontAwesomeIcon icon={faPlus} className="pr-2" />
-              Add
-            </Button>
-          </Link>
-        </TitleOption>
-      </Title>
-      {plants && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {plants?.map((plant, i) => (
-            <Link href={`/plants/${plant.plant_id}`} key={i}>
-              <Card className="w-full h-full flex p-3 gap-3 overflow-hidden text-ellipsis">
-                <div
-                  className="w-16 md:w-32 h-16 min-h-[64px] md:min-h-[128px] rounded-lg relative"
-                  style={
-                    plant.image
-                      ? {
-                          background: `url(${plant.image}) center center / cover no-repeat`,
-                        }
-                      : {
-                          background: `url(/placeholder.webp) center center / cover no-repeat`,
-                        }
-                  }
-                >
-                  {plant.last_moisture && (
+  if (error) {
+    return (
+      <div className="w-full h-full flex justify-center items-center">
+        <Error
+          err={
+            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+          }
+          action={"refresh"}
+        />
+      </div>
+    );
+  }
+
+  if (plants) {
+    return (
+      <div className="relative h-full">
+        <Title>
+          <TitleContent>Plants</TitleContent>
+          <TitleOption>
+            <Link href="/plants/add" passHref>
+              <Button>
+                <FontAwesomeIcon icon={faPlus} className="pr-2" />
+                Add
+              </Button>
+            </Link>
+          </TitleOption>
+        </Title>
+        {plants && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {plants?.map((plant, i) => (
+              <Link href={`/plants/${plant.plant_id}`} key={i}>
+                <Card className="w-full h-full flex flex-col p-3 gap-3 overflow-hidden text-ellipsis relative isolate">
+                  {/* <div
+                  className="absolute top-0 left-0 w-full h-full -z-20 opacity-10"
+                  style={{
+                    background: `linear-gradient(90deg, ${plant.color} 0%, transparent 30%)`,
+                  }}
+                ></div> */}
+                  <div className="flex gap-3">
                     <div
-                      className={`absolute isolate bottom-1 left-1 bg-white text-black font-bold overflow-hidden text-xs px-4 py-1 rounded-sm`}
-                    >
-                      <div
-                        className="absolute top-0 left-0 bg-blue-300 h-full -z-10"
-                        style={{ width: `${plant.last_moisture}%` }}
-                      ></div>
-                      <p className="z-10">55%</p>
+                      className={`w-16 rounded-lg relative ${
+                        !plant?.image ? "border-2 border-dashed" : "border-none"
+                      }`}
+                      style={
+                        plant.image
+                          ? {
+                              background: `url(${process.env.NEXT_PUBLIC_API_HOST}/image/${plant.image}) center center / cover no-repeat`,
+                            }
+                          : null
+                      }
+                    ></div>
+                    <div className="flex flex-col flex-1 justify-between py-3">
+                      <div className="text-3xl font-medium flex justify-between items-center">
+                        <span>{plant.plant_name}</span>
+                        {plant.last_moisture && (
+                          <span
+                            className="font-bold text-lg text-gray-400"
+                            style={{ color: plant.color }}
+                          >
+                            {plant.last_moisture}%
+                          </span>
+                        )}
+                      </div>
+                      {plant.species && (
+                        <p className="text-xs text-gray-400 italic">
+                          {plant.species}
+                        </p>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col flex-1 justify-between">
-                  <h3 className="text-3xl font-medium">{plant.plant_name}</h3>
-                  <div className="">
+                  </div>
+                  <div>
                     <p className="text-xs mt-2 tracking-normal">
                       Last watering:
                     </p>
@@ -71,14 +105,14 @@ const page = async () => {
                         : "Never"}
                     </p>
                   </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 };
 
 export default page;

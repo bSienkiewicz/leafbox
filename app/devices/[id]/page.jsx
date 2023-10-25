@@ -1,45 +1,47 @@
-import { getDevice, getPlants, getDevices, putDevice } from "@/lib/db";
+import { useAuth } from "@/authMiddleware";
 import DeviceSettings from "./DeviceSettings";
+import { getDevice, getPlants } from "@/app/_actions";
+import Error from "@/components/Error";
 
 const page = async ({ params }) => {
-  const modifyDevice = async (data) => {
-    "use server";
+  await useAuth();
+  let error = false;
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices/${params.id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
+  const devices = await getDevice(params.id)
+    .then((res) => {
+      return res.data;
+    })
+    .catch((err) => {
+      error = true;
+    });
+
+  const plants = await getPlants()
+    .then((res) => {
+      return res.data;
+    })
+    .catch((err) => {
+      error = true;
+    });
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex justify-center items-center">
+        <Error
+          err={
+            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+          }
+          action={"refresh"}
+        />
+      </div>
     );
-    const json = await res.json();
-    return json;
-  };
+  }
 
-  const devices = await fetch(
-    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices`,
-    { cache: "no-store" }
-  ).then((res) => res.json());
+  if (devices && plants) {
+    return <DeviceSettings plants={plants} devices={devices} params={params} />;
+  }
 
-  const plants = await fetch(
-    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants`,
-    { cache: "no-store" }
-  ).then((res) => res.json());
-
-  return (
-    devices &&
-    plants && (
-      <DeviceSettings
-        plants={plants}
-        devices={devices}
-        params={params}
-        modifyDevice={modifyDevice}
-      />
-    )
-  );
+  // Handle the case when devices and plants are not fetched yet
+  return <div>Loading...</div>;
 };
 
 export default page;

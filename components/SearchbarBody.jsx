@@ -4,7 +4,7 @@ import { faBars, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCookies } from "next-client-cookies";
 import React, { use, useEffect, useState } from "react";
-import Card from "./Cards/Card";
+import Card from "./Cards/Card_OLD";
 
 const SearchbarBody = ({ fetchPlants, fetchDevices }) => {
   const [plants, setPlants] = useState([]);

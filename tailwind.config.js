@@ -72,7 +72,15 @@ module.exports = {
         "pop-down" : {
           "0%": { transform: "translateY(0)", opacity: 1 },
           "100%": { transform: "translateY(10px)", opacity: 0 },
-        }
+        },
+        "slide-down" : {
+          "0%": { transform: "translateY(-100%)"},
+          "100%": { transform: "translateY(0)"},
+        },
+        "fade-in": {
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -80,6 +88,8 @@ module.exports = {
         "pop-up": "pop-up 0.2s ease-out forwards",
         "pop-up-longer": "pop-up 0.5s ease-out forwards",
         "pop-down": "pop-down 0.2s ease-out forwards",
+        "slide-down": "slide-down 0.5s ease-out forwards",
+        "fade-in": "fade-in 1s ease-out forwards",
       },
     },
   },

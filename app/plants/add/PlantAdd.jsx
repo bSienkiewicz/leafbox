@@ -1,29 +1,56 @@
 "use client";
-import Loader from "@/components/Loader/Loader";
-import Card from "@/components/Cards/Card";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  faArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { Title, TitleContent, TitleOption } from "@/components/Title";
 import { Button } from "@/components/ui/button";
+import { addPlant, getPlantExpert, uploadImage } from "@/app/_actions";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const PlantAdd = ({ addPlant, plantLookup }) => {
+const PlantAdd = () => {
   const router = useRouter();
   const [plant, setPlant] = useState({
     plant_name: "",
     location: "",
-    image: "",
     species: "",
     description: "",
     lower_threshold: 0,
     upper_threshold: 0,
     temperature_min: 0,
   });
-  const [plantInfo, setPlantInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [lookupError, setLookupError] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
+
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchPlantInfo, setSearchPlantInfo] = useState(null);
 
   const handleInputChange = (event, type) => {
     setPlant((prevPlant) => ({
@@ -32,43 +59,70 @@ const PlantAdd = ({ addPlant, plantLookup }) => {
     }));
   };
 
-  useEffect(() => {
-    console.log(plant);
-  }, [plant]);
+  const handleExpertSearch = async (event) => {
+    event.preventDefault();
+    const res = await getPlantExpert(event.target.search.value);
+    if (res.status === 200) {
+      setSearchResults(res.data);
+    } else {
+      toast.error("Couldn't find any plants");
+    }
+  };
 
-  const handleExpertClick = (type, values) => {
+  const handleExpertClick = (type, value) => {
     setPlant((prevPlant) => ({
       ...prevPlant,
-      [type]: values,
+      [type]: value,
     }));
   };
 
-  const handlePlantExpert = async (e) => {
-    e.preventDefault();
-    if (plant.species === "") return;
-    setLoading(true);
-    setPlantInfo(null);
-    let species_formatted = plant.species.replace(/[^a-zA-Z0-9 ]/g, "");
-    species_formatted = species_formatted.replace(/\s/g, "_");
-    console.log(species_formatted);
-    await plantLookup(species_formatted)
-      .then((res) => {
-        if (res.status === 200) {
-          setPlantInfo(res.data);
-          setLookupError(false);
-        } else {
-          setLookupError(true);
-          toast.error("Couldn't find plant with that species");
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setLookupError(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const handleAddToDescription = (value) => {
+    setPlant((prevPlant) => ({
+      ...prevPlant,
+      description:
+        prevPlant.description +
+        `${prevPlant.description.length > 0 ? "\n" : ""}` +
+        value +
+        ". ",
+    }));
   };
+
+  useEffect(() => {
+    console.log(searchPlantInfo);
+  }, [searchPlantInfo]);
+
+  useEffect(() => {
+    console.log(plant);
+    if (plant.image) {
+      const fetchNewPlant = async () => {
+        await addPlant(plant)
+          .then((res) => {
+            if (res.status === 200) {
+              toast.success("Plant added");
+              router.replace(`/plants`);
+            } else {
+              toast.error("Couldn't add plant");
+            }
+          })
+          .catch((err) => {
+            toast.error("Couldn't add plant");
+          });
+      };
+      fetchNewPlant();
+    }
+  }, [plant]);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImageUrl(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(reader.result);
+    };
+    reader.readAsDataURL(imageFile);
+  }, [imageFile]);
 
   const handleSubmit = async () => {
     if (
@@ -80,39 +134,40 @@ const PlantAdd = ({ addPlant, plantLookup }) => {
       toast.error("There is an error with your input.");
       return;
     }
-    await addPlant(plant)
-      .then((res) => {
-        if (res.status === 200) {
-          toast.success("Plant added");
-          router.replace(`/plants`);
-        } else {
-          toast.error("Couldn't add plant");
-        }
-      })
-      .catch((err) => {
-        toast.error("Couldn't add plant");
-      });
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      const res = await uploadImage(formData);
+      if (res.status === 200) {
+        toast.success("Image uploaded");
+        console.log(res.data);
+        setPlant((prevPlant) => ({
+          ...prevPlant,
+          image: res.data.image,
+          color: res.data.color,
+        }));
+      } else {
+        toast.error("Couldn't upload image");
+      }
+    }
   };
 
   return (
     <div className="relative flex flex-col gap-3">
-    <Title>
-      <TitleContent>Plants</TitleContent>
-      <TitleOption>
-        <Button>
-          Submit
-        </Button>
-      </TitleOption>
-    </Title>
+      <Title>
+        <TitleContent>Plants</TitleContent>
+        <TitleOption>
+          <Button onClick={handleSubmit}>Submit</Button>
+        </TitleOption>
+      </Title>
       <div className="flex flex-col gap-3">
-        <Card>
-          <div className="grid grid-cols-[130px,1fr] gap-3 items-center">
-            <label htmlFor="plantName" className="text-gray-300 ps-3 text-sm">
+        <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-[100px,1fr] gap-3 items-center">
+            <Label htmlFor="plantName">
               Plant name <span className="text-red-500">*</span>
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
-              className="bg-white/20 rounded-md px-3 py-1 text-md w-full"
               name="plantName"
               id="plantName"
               placeholder="Enter a name for this plant"
@@ -120,55 +175,70 @@ const PlantAdd = ({ addPlant, plantLookup }) => {
               value={plant.plant_name}
               required
             />
-            <label htmlFor="location" className="text-gray-300 ps-3 text-sm">
-              Location
-            </label>
-            <input
+            <Label htmlFor="location">Location</Label>
+            <Input
               type="text"
-              className="bg-white/20 rounded-md px-3 py-1 text-md w-full"
-              name="location"
-              id="location"
+              name="species"
+              id="species"
               onChange={(e) => handleInputChange(e, "location")}
+              value={plant.location}
               placeholder="Enter a location for this plant"
             />
-            <div
-              className="w-28 h-28 rounded-lg"
-              style={
-                plant.image
-                  ? {
-                      background: `url(${plant.image}) no-repeat center center/cover`,
-                      backgroundColor: "rgba(0, 0, 0, 0.2)",
-                    }
-                  : { background: `url(/placeholder.webp) center/cover` }
-              }
-            ></div>
-            <input
+            <Label htmlFor="location">Latin name</Label>
+            <Input
               type="text"
-              className="bg-white/20 rounded-md px-3 py-1 text-md w-full"
-              name="image"
-              id="image"
-              onChange={(e) => handleInputChange(e, "image")}
-              placeholder="Enter a URL for a nice image of this plant"
+              name="species"
+              id="species"
+              onChange={(e) => handleInputChange(e, "species")}
+              value={plant.species}
+              placeholder="Enter a latin name for this plant"
             />
+            <Label
+              htmlFor="image"
+              className="w-full aspect-square cursor-pointer rounded-lg !bg-gray-900 mx-auto flex items-center text-center text-xs p-2 relative z-0"
+              style={{ background: `url(${imageUrl}) center center/cover` }}
+            >
+              <input
+                type="file"
+                className="hidden"
+                name="image"
+                id="image"
+                onChange={(e) => setImageFile(e.target.files?.[0])}
+              />
+            </Label>
+            {!imageFile ? (
+              <p className="text-sm">
+                <FontAwesomeIcon icon={faArrowLeft} className="pr-2" />
+                Add an image for this plant
+              </p>
+            ) : (
+              <p className="text-sm text-green-200">
+                <Button onClick={() => setImageFile(null)}>
+                  Click here to remove it
+                </Button>
+              </p>
+            )}
           </div>
         </Card>
-        <Card cClass={"flex flex-col gap-3"}>
-          <label htmlFor="desc" className="text-sm">
-            Description
-          </label>
-          <textarea
-            name="desc"
-            id="desc"
-            rows={3}
-            className="w-full rounded-lg backdrop-blur-sm bg-white/20 resize-none p-3 text-gray-300 text-sm"
-            placeholder="Enter a description for this plant"
-            value={plant.description}
-            onChange={(e) => handleInputChange(e, "description")}
-          ></textarea>
+        <Card className={""}>
+          <CardHeader>
+            <CardTitle>Plant description</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              name="desc"
+              id="desc"
+              rows={6}
+              className="w-full resize-none"
+              placeholder="Enter a description for this plant"
+              value={plant.description}
+              onChange={(e) => handleInputChange(e, "description")}
+            />
+          </CardContent>
         </Card>
         <div className="grid grid-cols-12 gap-3">
           <div className="col-span-4">
-            <Card cClass={"flex flex-col gap-3"}>
+            <Card className={"flex flex-col gap-3 p-6"}>
               <div className="">
                 <p className="text-sm text-gray-300 mb-3">
                   Soil moisture <span className="text-red-500">*</span>
@@ -216,83 +286,216 @@ const PlantAdd = ({ addPlant, plantLookup }) => {
             </Card>
           </div>
           <div className="col-span-8">
-            <Card title={"PlantExpert"} cClass={"overflow-y-auto"}>
-              <p className="text-sm text-gray-300 mb-3">
-                Enter a species name to get more information about this plant
-              </p>
-              <form
-                className="relative w-full box-content"
-                onSubmit={(e) => handlePlantExpert(e)}
-              >
-                <input
-                  type="text"
-                  className="bg-white/20 rounded-md px-3 py-1 text-md w-full relative"
-                  name="image"
-                  id="image"
-                  onChange={(e) => handleInputChange(e, "species")}
-                  placeholder="Enter a species for this plant (e.g. 'Aloe vera')"
-                />
-                <div className="absolute right-2 top-0 h-full flex items-center">
-                  <button
-                    className="px-2 py-1 text-xs bg-black/30 rounded-full"
-                    type="submit"
-                  >
-                    Search
-                  </button>
+            <Card className={"overflow-y-auto p-6"}>
+              <div className={"flex flex-row justify-between mb-4"}>
+                <div className="flex flex-col">
+                  <p className="font-medium">Plant Expert</p>
+                  <p className="text-gray-400 text-sm">
+                    Search for a plant to get to know your plants better!
+                  </p>
                 </div>
-              </form>
-              {plantInfo && (
-                <div className="flex flex-wrap gap-1 mt-3 text-sm">
-                  <span
-                    className="bg-white/20 rounded-full px-3 py-1 text-green-200 cursor-pointer underline"
-                    onClick={() =>
-                      handleExpertClick("plant_name", plantInfo["Common Name"])
-                    }
-                  >
-                    Name: {plantInfo["Common Name"]}
-                  </span>
-                  <span className="bg-white/20 rounded-full px-2 py-1">
-                    Edibility: {(plantInfo["Edibility Rating"] / 5) * 100}%
-                  </span>
-                  <span className="bg-white/20 rounded-full px-2 py-1">
-                    Medicinal: {(plantInfo["Medicinal Rating"] / 5) * 100}%
-                  </span>
-                  <span
-                    className="bg-white/20 rounded-full px-2 py-1 text-green-200 cursor-pointer underline"
-                    onClick={() => {
-                      handleExpertClick(
-                        "lower_threshold",
-                        plantInfo?.Thresholds.min
-                      );
-                      handleExpertClick(
-                        "upper_threshold",
-                        plantInfo?.Thresholds.max
-                      );
-                    }}
-                  >
-                    Soil moisture: {plantInfo?.Thresholds.min}% -{" "}
-                    {plantInfo?.Thresholds.max}%
-                  </span>
-                  <span
-                    className="bg-white/20 rounded-full px-2 py-1 text-green-200 cursor-pointer underline"
-                    onClick={() =>
-                      handleExpertClick(
-                        "temperature_min",
-                        plantInfo["Min Temperature"]
-                      )
-                    }
-                  >
-                    Minimum temperature: {plantInfo["Min Temperature"]}°C
-                  </span>
-                  <span className="bg-white/20 rounded-lg px-2 py-1">
-                    Known Hazards: {plantInfo["Known Hazards"]}
-                  </span>
+
+                <Button onClick={() => setSearchDialogOpen(true)}>
+                  Search plant
+                </Button>
+                <Dialog
+                  open={searchDialogOpen}
+                  onOpenChange={() => setSearchDialogOpen(false)}
+                >
+                  <DialogContent className="sm:max-w-[525px] max-h-[80%] overflow-auto">
+                    <DialogHeader>
+                      <DialogTitle>Search for a plant</DialogTitle>
+                      <DialogDescription>
+                        You can find your plant by their common name or species
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form
+                      onSubmit={(e) => handleExpertSearch(e)}
+                      className="flex gap-3"
+                    >
+                      <Input
+                        type="text"
+                        name="search"
+                        id="search"
+                        placeholder="Enter a search phrase"
+                      />
+                      <Button type="submit">Search</Button>
+                    </form>
+                    {searchResults && (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Common Name</TableHead>
+                            <TableHead>Latin name</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className={"max-h-[300px] overflow-auto"}>
+                          {searchResults.map((plant, i) => (
+                            <TableRow
+                              key={i}
+                              onClick={() => {
+                                setSearchPlantInfo(plant);
+                                setSearchDialogOpen(false);
+                              }}
+                            >
+                              <TableCell className="font-medium">
+                                {plant.common_name}
+                              </TableCell>
+                              <TableCell>{plant.latin_name}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+              {searchPlantInfo && (
+                <div>
+                  <p className="pb-3 text-sm">
+                    Here's what we know about this plant:
+                  </p>
+
+                  <div className="flex flex-wrap gap-3 items-center">
+                    {searchPlantInfo.common_name && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleExpertClick(
+                            "plant_name",
+                            searchPlantInfo.common_name
+                          )
+                        }
+                      >
+                        <span>Common name: {searchPlantInfo.common_name}</span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.latin_name && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleExpertClick(
+                            "species",
+                            searchPlantInfo.latin_name
+                          )
+                        }
+                      >
+                        <span>Latin name: {searchPlantInfo.latin_name}</span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.moisture && (
+                      <div className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1">
+                        <span>Moisture: {searchPlantInfo.moisture}°C</span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.temperature_min && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleExpertClick(
+                            "temperature_min",
+                            searchPlantInfo.temperature_min
+                          )
+                        }
+                      >
+                        <span>
+                          Minimum temperature: {searchPlantInfo.temperature_min}
+                          °C
+                        </span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.sun && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleAddToDescription(
+                            `Enjoys ${searchPlantInfo.sun}`
+                          )
+                        }
+                      >
+                        <span>Sun exposure: Enjoys {searchPlantInfo.sun}</span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.usda && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleAddToDescription(
+                            `USDA Hardiness: ${searchPlantInfo.usda}`
+                          )
+                        }
+                      >
+                        <span>USDA Hardiness: {searchPlantInfo.usda}</span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.medicinal && (
+                      <span>
+                        Medicinal uses: {(searchPlantInfo.medicinal / 5) * 100}%
+                      </span>
+                    )}
+
+                    {searchPlantInfo.edibility && (
+                      <span>
+                        Edibility rating:{" "}
+                        {(searchPlantInfo.edibility / 5) * 100}%
+                      </span>
+                    )}
+
+                    {searchPlantInfo.edible_parts && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleAddToDescription(
+                            `Edible parts: ${searchPlantInfo.edible_parts}`
+                          )
+                        }
+                      >
+                        <span>
+                          Edible parts: {searchPlantInfo.edible_parts}
+                        </span>
+                      </div>
+                    )}
+
+                    {searchPlantInfo.hazards && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() =>
+                          handleAddToDescription(
+                            `Known hazards: ${searchPlantInfo.hazards}`
+                          )
+                        }
+                      >
+                        <span>Known hazards: {searchPlantInfo.hazards}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </Card>
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const plantExpertInfo = (info) => {
+  return (
+    <div className="flex gap-1 flex-nowrap">
+      <span>Moisture:</span>
+      <span>
+        {info ? (
+          <span>{info}</span>
+        ) : (
+          <span className="text-red-500">Unknown</span>
+        )}
+      </span>
     </div>
   );
 };

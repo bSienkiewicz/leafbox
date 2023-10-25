@@ -33,7 +33,7 @@ export const AppContextProvider = ({ children, ...props }) => {
   return (
     <NextThemesProvider {...props}>
       <AppContext.Provider value={{ isSidebarOpen, toggleSidebar, setIsSidebarOpen, isMobile, setIsMobile }}>
-        {children}
+          {children}
       </AppContext.Provider>
     </NextThemesProvider>
   );

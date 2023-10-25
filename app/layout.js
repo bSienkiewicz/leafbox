@@ -37,13 +37,13 @@ export default function RootLayout({ children }) {
           position="top-right"
           toastOptions={{
             style: {
-              background: "#000",
+              background: "#09090b",
               color: "#fff",
               border: "1px solid 	#27272a",
               borderRadius: "0.5rem",
               padding: "1.5rem",
             },
-            position: "top-right",
+            position: "bottom-right",
           }}
         />
         <WebSocketProvider />
@@ -57,7 +57,7 @@ export default function RootLayout({ children }) {
           <TooltipProvider>
             <div className="w-full mx-auto flex flex-col box-border">
               <Navbar />
-              <main className="max-w-7xl w-full mx-auto flex-1 space-y-4 p-8 pt-6 overflow-y-auto">
+              <main className="max-w-[1920px] w-full mx-auto flex-1 space-y-4 p-2 md:p-8 pt-6 overflow-y-auto">
                 <Suspense fallback={<Loading />}>{children}</Suspense>
               </main>
             </div>

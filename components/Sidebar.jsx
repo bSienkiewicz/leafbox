@@ -62,7 +62,6 @@ const Sidebar = () => {
   const setLocation = useWeatherStore((s) => s.setLocation);
 
   const weather = useWeatherStore((s) => s.weather);
-  const token = useCookies().get("jwt");
 
   useEffect(() => {
     if (!WsStatus) return;

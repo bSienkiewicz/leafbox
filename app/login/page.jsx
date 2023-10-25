@@ -2,10 +2,10 @@ import { checkIfUserRegistered, userLogin } from "@/lib/db";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Body from "./Body";
-import Card from "@/components/Cards/Card";
 import LoginBox from "./LoginBox";
 import SetupBox from "./SetupBox";
 import RecoveryBox from "./RecoveryBox";
+import { Card } from "@/components/ui/card";
 
 const page = async () => {
   const login = async (data) => {
@@ -69,7 +69,7 @@ const page = async () => {
 
   return (
     <div className="w-screen h-screen absolute top-0 left-0 flex justify-center items-center">
-      <Card cClass={"p-12"}>
+      <Card className={"p-12"}>
         <div className="w-full flex flex-col justify-center items-center relative overflow-y-auto">
           {stepSwitch(step)}
         </div>

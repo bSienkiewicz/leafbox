@@ -11,7 +11,7 @@ const TitleContent = ({ children, className, ...props }) => {
 
 const TitleOption = ({ children, className, ...props }) => {
   return (
-    <div className={cn("text-3xl font-bold tracking-tight", className)} {...props}>
+    <div className={cn("text-3xl font-bold tracking-tight flex items-center gap-3", className)} {...props}>
       {children}
     </div>
   )

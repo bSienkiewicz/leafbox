@@ -1,56 +1,50 @@
-import { getPlantAndReadings, putPlant } from "@/lib/db";
+import { getPlantAndReadings } from "@/app/_actions";
 import { useAuth } from "@/authMiddleware";
 import Error from "@/components/Error";
-import PlantDisplay from "./PlantDisplay";
+import PlantID from "./PlantID";
 
-const page = async({ params }) => {
-  const modifyPlant = async (data) => {
-    "use server";
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants/${params.id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
-    );
-    const json = await res.json();
-    return json;
-  }
-
+const page = async ({ params }) => {
   await useAuth();
-  const readingsAmmount = 25;
+  const readingsAmmount = 15;
   let plant = null;
   let readings = null;
-  let loading = true;
   let error = null;
 
-  await getPlantAndReadings(params.id, readingsAmmount).then((res) => {
-    plant = res.plant[0];
-    readings = res.readings;
-    loading = false;
-  }).catch((err) => {
-    error = true;
-  });
+  await getPlantAndReadings(params.id, readingsAmmount)
+    .then((res) => {
+      plant = res.data.plant[0];
+      readings = res.data.readings;
+      if (!plant) {
+        error = "Couldn't find plant with ID \"" + params.id + '"';
+      }
+    })
+    .catch((err) => {
+      error =
+        "Error loading data from the API. Is the API server running? Check the server logs for more info.";
+    });
 
-  return (
-    <div className="h-full w-full">
-      {error && (
-        <div className="w-full h-full flex justify-center items-center">
-          <Error
-            err={`Couldn't find plant with ID \"` + params.id + `\"`}
-            action={"back"}
-          />
-        </div>
-      )}
-      {plant && (
-        <PlantDisplay plant_res={plant} readings_res={readings} loading_res={loading} modifyPlant={modifyPlant} params={params}/>
-      )}
-    </div>
-  );
+  if (error) {
+    return (
+      <div className="w-full h-full flex justify-center items-center">
+        <Error err={error} action={"refresh"} />
+      </div>
+    );
+  }
+
+  if (plant && readings) {
+    return (
+      <div className="h-full w-full">
+        <PlantID
+          plant_res={plant}
+          readings_res={readings}
+          params={params}
+          readingsAmmount={readingsAmmount}
+        />
+      </div>
+    );
+  }
+
+  return <div>Loading...</div>;
 };
 
 export default page;
