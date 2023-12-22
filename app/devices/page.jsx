@@ -4,10 +4,17 @@ import { Card } from "@/components/ui/card";
 import { Title, TitleContent, TitleOption } from "@/components/Title";
 import { getDevices, getPlants } from "../_actions";
 import Error from "@/components/Error";
+import { useQRCode } from "next-qrcode";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import QrCodeDialog from "@/components/QrCodeDialog";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faQrcode } from "@fortawesome/free-solid-svg-icons";
 
 const page = async () => {
   await useAuth();
   let error = false;
+
   const plants = await getPlants()
     .then((res) => {
       return res.data;
@@ -41,6 +48,18 @@ const page = async () => {
       <div className="h-full w-full overflow-x-visible overflow-y-auto">
         <Title>
           <TitleContent>Devices</TitleContent>
+          <TitleOption>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="text-xl">
+                  <FontAwesomeIcon icon={faQrcode} />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <QrCodeDialog />
+              </DialogContent>
+            </Dialog>
+          </TitleOption>
         </Title>
         {devices && (
           <div className="w-full grid md:grid-cols-2 grid-cols-1 gap-3">

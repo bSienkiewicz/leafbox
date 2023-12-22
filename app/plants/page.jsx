@@ -66,7 +66,7 @@ const page = async () => {
                       style={
                         plant.image
                           ? {
-                              background: `url(${process.env.NEXT_PUBLIC_API_HOST}/image/${plant.image}) center center / cover no-repeat`,
+                              background: `url(http://leafbox.ddns.net:5000/uploads/${plant.image}) center center / cover no-repeat`,
                             }
                           : null
                       }

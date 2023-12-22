@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { login } from "../_actions";
 
-const LoginBox = ({login}) => {
+const LoginBox = () => {
   const router = useRouter();
   const setToken = useTokenStore((state) => state.setToken);
 

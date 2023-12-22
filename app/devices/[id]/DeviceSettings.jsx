@@ -1,14 +1,17 @@
 "use client";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { RocketIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 
 import {
   faCheckCircle,
+  faCrosshairs,
   faPenToSquare,
   faPlay,
+  faRotateRight,
+  faSpinner,
   faSquareArrowUpRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { Card } from "@/components/ui/card";
@@ -42,6 +45,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { modifyDevice } from "@/app/_actions";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { WebSocketContext } from "@/lib/MessageContext";
 
 const DeviceSettings = ({ plants, devices, params }) => {
   const router = useRouter();
@@ -55,7 +65,8 @@ const DeviceSettings = ({ plants, devices, params }) => {
     false,
     false,
   ]);
-  const [value, setValue] = React.useState("");
+  const { sendCommand, calibrationMessage } = useContext(WebSocketContext);
+
   const checkPlantsInUse = () => {
     const plantsInUse = {};
 
@@ -72,14 +83,33 @@ const DeviceSettings = ({ plants, devices, params }) => {
       }
     });
 
-    console.log(plantsInUse);
-
     setPlantsInUse(plantsInUse);
   };
 
   useEffect(() => {
+    if (calibrationMessage) {
+      if (
+        parseInt(calibrationMessage.values.split("|")[0]) > 200 ||
+        parseInt(calibrationMessage.values.split("|")[1]) > 200
+      ) {
+        setDevice((prev) => {
+          const newDevice = { ...prev };
+          newDevice[`sensor_config_${calibrationMessage.socket}`] =
+            calibrationMessage.values;
+          return newDevice;
+        });
+        toast.success("Calibration successful");
+      } else {
+        toast.error("Calibration failed. The sensor is either not connected or broken.");
+      }
+    }
+    console.log(calibrationMessage);
+  }, [calibrationMessage]);
+
+  useEffect(() => {
     devices.forEach((dev) => {
       if (dev.device_id == params.id) {
+        console.log(device);
         setDevice(dev);
       }
     });
@@ -87,6 +117,7 @@ const DeviceSettings = ({ plants, devices, params }) => {
 
   useEffect(() => {
     checkPlantsInUse();
+    console.log(device);
   }, [device]);
 
   const handlePlantSelect = (slot) => {
@@ -123,6 +154,17 @@ const DeviceSettings = ({ plants, devices, params }) => {
     });
   };
 
+  const handleSensorConfigChange = (e, type, i) => {
+    let sensorConfig = device[`sensor_config_${i}`].split("|");
+    sensorConfig[type] = e.target.value;
+    sensorConfig = sensorConfig.join("|");
+    setDevice((prev) => {
+      const newDevice = { ...prev };
+      newDevice[`sensor_config_${i}`] = sensorConfig;
+      return newDevice;
+    });
+  };
+
   const handleSubmit = async () => {
     await modifyDevice(device)
       .then((res) => {
@@ -138,7 +180,7 @@ const DeviceSettings = ({ plants, devices, params }) => {
     device && (
       <div>
         {!device.configured ? (
-          <Alert className="border-green-300 ">
+          <Alert className="border-green-300 mb-4">
             <RocketIcon className="h-4 w-4" />
             <AlertTitle className="text-green-300 font-bold">
               Configure this device!
@@ -152,23 +194,27 @@ const DeviceSettings = ({ plants, devices, params }) => {
           </Alert>
         ) : null}
         <Title>
-          <TitleContent>{device["device_name"]}</TitleContent>
+          <TitleContent>
+            <span className="text-lg md:text-3xl">{device["device_name"]}</span>
+            <p className="text-sm text-gray-400">{device?.mac}</p>
+          </TitleContent>
           <TitleOption>
             <Button onClick={handleSubmit}>
               <FontAwesomeIcon icon={faCheckCircle} className="pr-2" />
-              Save
+              <span className="hidden md:block">Save</span>
             </Button>
             <Sheet>
               <SheetTrigger asChild>
                 <Button>
                   <FontAwesomeIcon icon={faPenToSquare} className="pr-2" />
-                  Edit plant
+                  <span className="hidden md:block">Edit plant</span>
                 </Button>
               </SheetTrigger>
               <RenderDeviceSheet
                 device={device}
                 handleNameChange={handleNameChange}
                 handleLocationChange={handleLocationChange}
+                sendCommand={sendCommand}
               />
             </Sheet>
           </TitleOption>
@@ -209,7 +255,10 @@ const DeviceSettings = ({ plants, devices, params }) => {
                         onClick={() => handlePlantSelect(i + 1)}
                       >
                         {plantName !== "Empty socket" && (
-                          <Link href={`/plants/${plant?.plant_id}`} className="absolute top-2 right-2">
+                          <Link
+                            href={`/plants/${plant?.plant_id}`}
+                            className="absolute top-2 right-2"
+                          >
                             <Button className="p-3">
                               <FontAwesomeIcon icon={faSquareArrowUpRight} />
                             </Button>
@@ -219,7 +268,7 @@ const DeviceSettings = ({ plants, devices, params }) => {
                           <div
                             className="w-full h-full top-0 left-0 absolute -z-10 after:w-full after:h-full after:bg-black/40 after:absolute after:top-0 after:left-0"
                             style={{
-                              background: `url(${process.env.NEXT_PUBLIC_API_HOST}/image/${plantImage}) center center / cover no-repeat`,
+                              background: `url(http://leafbox.ddns.net:5000/uploads/${plantImage}) center center / cover no-repeat`,
                             }}
                           ></div>
                         )}
@@ -245,81 +294,152 @@ const DeviceSettings = ({ plants, devices, params }) => {
                       setShowOnlyAvailable={setShowOnlyAvailable}
                     />
                   </Dialog>
+
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="item-1">
+                      <AccordionTrigger>Sensor config</AccordionTrigger>
+                      <AccordionContent>
+                        <Label htmlFor="moistureMin" className="text-sm">
+                          0% analog value
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="1500"
+                          value={device[`sensor_config_${i + 1}`].split("|")[0]}
+                          onChange={(e) =>
+                            handleSensorConfigChange(e, 0, i + 1)
+                          }
+                        />
+                        <Label htmlFor="moistureMin" className="text-sm mt-3">
+                          100% analog value
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="1000"
+                          value={device[`sensor_config_${i + 1}`].split("|")[1]}
+                          onChange={(e) =>
+                            handleSensorConfigChange(e, 1, i + 1)
+                          }
+                        />
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button className="mt-3">
+                              <FontAwesomeIcon
+                                icon={faCrosshairs}
+                                className="pr-2"
+                              />
+                              <span className="hidden md:block">Calibrate</span>
+                            </Button>
+                          </DialogTrigger>
+                          <RenderCalibrationModal
+                            device={device}
+                            socket={i + 1}
+                            sendCommand={sendCommand}
+                          />
+                        </Dialog>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </div>
               );
             })}
         </div>
-        {/* <div className="flex flex-col">
-            <p className="text-lg font-bold mb-4 relative">Sockets</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Array(4)
-                .fill()
-                .map((plant, i) => (
-                  <Card className="flex flex-col" key={i}>
-                    <div
-                      className="flex flex-col items-center justify-center bg-slate-100 rounded-md relative overflow-hidden cursor-pointer isolate"
-                      onClick={() => handlePlantSelect(i + 1)}
-                    >
-                      <div
-                        className="w-full h-full top-0 left-0 absolute -z-10 after:w-full after:h-full after:bg-black/40 after:absolute after:top-0 after:left-0"
-                        style={{
-                          background: `url(${
-                            plants.find(
-                              (p) => p.plant_id === device[`plant_${i + 1}`]
-                            )?.image
-                          }) center center / cover no-repeat`,
-                        }}
-                      ></div>
-                      <div className="flex flex-col items-center justify-center text-white my-4">
-                        <p className="text-lg font-bold">
-                          {plants.find(
-                            (p) => p.plant_id === device[`plant_${i + 1}`]
-                          )?.plant_name || "Empty socket"}
-                        </p>
-                        <p className="text-sm">
-                          {plants.find(
-                            (p) => p.plant_id === device[`plant_${i + 1}`]
-                          )?.species || "Select a plant"}
-                        </p>
-                      </div>
-                    </div>
-                    <Frame title="Socket settings" socket={i}>
-                      <div className="py-3 flex flex-col px-4">
-                        <label htmlFor="moistureMin" className="text-sm">
-                          0% analog value
-                        </label>
-                        <input
-                          type="number"
-                          className="border px-2 py-1 mb-3 text-sm"
-                          placeholder="1500"
-                        />
-                        <label htmlFor="moistureMin" className="text-sm">
-                          100% analog value
-                        </label>
-                        <input
-                          type="number"
-                          className="border px-2 py-1 text-sm"
-                          placeholder="1040"
-                        />
-                      </div>
-                    </Frame>
-                  </Card>
-                ))}
-            </div>
-          </div>
-        </form>
-        {modal && (
-          <RenderModal
-            plants={plants}
-            plantsInUse={plantsInUse}
-            handleModalClose={handleModalClose}
-            handlePlantChange={handlePlantChange}
-            modal={modal}
-          />
-        )} */}
-        {/* <div className="absolute bottom-0 left-0 w-full h-3/4 bg-red-300 z-20 translate-y-3/4 hover:translate-y-0"></div> */}
       </div>
     )
+  );
+};
+
+const RenderCalibrationModal = ({ device, socket, sendCommand }) => {
+  const [step, setStep] = useState(0);
+  const [isMeasuring, setIsMeasuring] = useState(false);
+
+  const handleClick = () => {
+    setIsMeasuring(true);
+    sendCommand(device.mac, "calibrate", { step: step, plant: socket });
+
+    setTimeout(() => {
+      setStep((prev) => prev + 1);
+      setIsMeasuring(false);
+    }, 2000);
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Calibrate sensor connected to socket {socket}</DialogTitle>
+      </DialogHeader>
+      {step === 0 && (
+        <div className="">
+          <p className="text-sm text-red-400">
+            Please note that the device will be paused during the calibration
+            process. Ensure that the device is properly configured and running.
+            If you choose to abort the calibration, the device will resume its
+            normal operation within 1 minute.
+          </p>
+          <div className="flex justify-end">
+            <Button onClick={() => setStep(1)} className="mt-3">
+              <FontAwesomeIcon icon={faPlay} className="pr-2" />
+              <span>Start calibration</span>
+            </Button>
+          </div>
+        </div>
+      )}
+      {step === 1 && (
+        <div className="">
+          <p className="text-2xl">Step {step}</p>
+          <p>Place the sensor in the dried out soil and click next.</p>
+          <p className="text-xs">
+            Make sure that the device is configured and running.
+          </p>
+          <div className="flex justify-end">
+            {!isMeasuring ? (
+              <Button onClick={() => handleClick()} className="mt-3">
+                Next
+              </Button>
+            ) : (
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            )}
+          </div>
+        </div>
+      )}
+      {step === 2 && (
+        <div className="">
+          <p className="text-2xl">Step {step}</p>
+          <p>Great! Now place the sensor in the water and click next.</p>
+          <p className="text-xs">
+            Now place the sensor in the water and click next.
+          </p>
+          <div className="flex justify-end">
+            {!isMeasuring ? (
+              <Button onClick={() => handleClick()} className="mt-3">
+                Next
+              </Button>
+            ) : (
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            )}
+          </div>
+        </div>
+      )}
+      {step === 3 && (
+        <div className="">
+          <p className="text-2xl">Step {step}</p>
+          <p>All set! The updated values are applied to the device</p>
+          <div className="flex justify-end">
+            <DialogClose asChild>
+              <Button
+                onClick={() => {
+                  handleClick();
+                  setStep(0);
+                }}
+                className="mt-3 bg-green-600 text-white hover:bg-green-700"
+              >
+                Close
+              </Button>
+            </DialogClose>
+          </div>
+        </div>
+      )}
+    </DialogContent>
   );
 };
 
@@ -327,7 +447,26 @@ const RenderDeviceSheet = ({
   device,
   handleNameChange,
   handleLocationChange,
+  sendCommand
 }) => {
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
+
+  const handleRestart = (e) => {
+    setButtonsDisabled(true);
+    sendCommand(device?.mac, "reboot");
+
+    toast.promise(
+      new Promise((resolve) => setTimeout(resolve, 10000)),
+      {
+        loading: `Restarting ${device?.device_name}`,
+        success: `${device?.device_name} restarted!`,
+      }
+    );
+
+    setTimeout(() => {
+      setButtonsDisabled(false);
+    }, 10000);
+  }
   return (
     <SheetContent>
       <SheetHeader>
@@ -360,6 +499,14 @@ const RenderDeviceSheet = ({
           />
         </div>
       </div>
+            <Button
+              variant="destructive"
+              {...(buttonsDisabled ? { disabled: true } : {})}
+              onClick={() => handleRestart()}
+            >
+              <FontAwesomeIcon icon={faRotateRight} className="pr-2" />
+              <span className="hidden md:block">Restart device</span>
+            </Button>
 
       <SheetFooter>
         <SheetClose asChild>
@@ -431,7 +578,7 @@ const RenderPlantModal = ({
                     !plant.image ? "hidden" : null
                   }`}
                   style={{
-                    background: `url(${process.env.NEXT_PUBLIC_API_HOST}/image/${plant?.image}) center center / cover no-repeat`,
+                    background: `url(http://leafbox.ddns.net:5000/uploads/${plant?.image}) center center / cover no-repeat`,
                   }}
                 ></div>
                 <div className="flex justify-center flex-col">
@@ -461,40 +608,5 @@ const RenderPlantModal = ({
     </DialogContent>
   );
 };
-
-// const RenderModal = ({
-//   plants,
-//   plantsInUse,
-//   handleModalClose,
-//   handlePlantChange,
-// }) => {
-//   return (
-//     <Modal onClose={handleModalClose}>
-//       <button
-//         className="p-3 rounded-full text-md text-center border-2 w-full mb-4"
-//         onClick={() => handlePlantChange(null)}
-//       >
-//         CLEAR
-//       </button>
-//       {plants.map((plant, i) => (
-//         <div
-//           onClick={() => handlePlantChange(plant.plant_id)}
-//           className="text-white w-full h-16 p-3 relative rounded-lg shadow isolate overflow-hidden flex mb-4 cursor-pointer "
-//           style={{
-//             background: `url(${plant?.image}) center center / cover no-repeat`,
-//           }}
-//         >
-//           <div className="z-10 absolute top-0 left-0 w-full h-full bg-black/70 backdrop-blur-sm"></div>
-//           <div className="flex justify-between items-center z-20">
-//             <div className="flex gap-3 items-center">
-//               <h1 className="text-2xl">{plant?.plant_name}</h1>
-//               <p className="text-xs text-gray-400">{plant?.device_name}</p>
-//             </div>
-//           </div>
-//         </div>
-//       ))}
-//     </Modal>
-//   );
-// };
 
 export default DeviceSettings;

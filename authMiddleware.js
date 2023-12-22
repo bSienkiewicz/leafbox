@@ -8,7 +8,6 @@ export async function useAuth() {
     redirect("/logout");
   }
   
-  
   await fetch(`${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/validate`, {
     method: "POST",
     headers: {

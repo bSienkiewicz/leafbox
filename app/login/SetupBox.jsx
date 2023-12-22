@@ -1,22 +1,65 @@
-"use client"
-import React from "react";
+"use client";
+import React, { useEffect } from "react";
 import { generateRandomString } from "@/utils/utils";
 import bcrypt from "bcryptjs";
 import toast from "react-hot-toast";
 import { redirect, useRouter } from "next/navigation";
+import { register } from "../_actions";
+import {
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const saltRounds = 10;
 
-const SetupBox = ({register}) => {
+const SetupBox = () => {
   const [isPasswordLongEnough, setIsPasswordLongEnough] = React.useState(false);
-  const [isPasswordNumber, setIsPasswordNumber] = React.useState(false);
   const [isPasswordSpecial, setIsPasswordSpecial] = React.useState(false);
+  const [password, setPassword] = React.useState({
+    value: "",
+    repeat: "",
+  });
+  const [errors, setErrors] = React.useState({
+    username: false,
+    password: false,
+    repeat: false,
+  });
   const router = useRouter();
+
+  const formValidation = (e) => {
+    let errors = {
+      username: false,
+      password: false,
+      repeat: false,
+    }
+    if (!isPasswordLongEnough || !isPasswordSpecial){
+      errors.password = true;
+    }
+    if (password.value !== password.repeat) {
+      errors.repeat = true;
+    }
+    if (e.target.username.value.length < 3) {
+      errors.username = true;
+    }
+    return errors;
+  };
+
+  useEffect(() => {
+    console.log(errors)
+  }, [errors])
 
   async function handleSetupSubmit(e) {
     e.preventDefault();
-    if (!isPasswordLongEnough || !isPasswordNumber || !isPasswordSpecial)
+    const errors = formValidation(e);
+    setErrors(errors);
+    if (Object.values(errors).some((error) => error === true)) {
       return;
+    }
 
     const hashedPassword = bcrypt.hashSync(e.target.password.value, saltRounds);
 
@@ -48,16 +91,11 @@ const SetupBox = ({register}) => {
 
   function handlePasswordChange(e) {
     const password = e.target.value;
+    setPassword({ ...password, value: password });
     if (password.length >= 8) {
       setIsPasswordLongEnough(true);
     } else {
       setIsPasswordLongEnough(false);
-    }
-
-    if (password.match(/[0-9]/)) {
-      setIsPasswordNumber(true);
-    } else {
-      setIsPasswordNumber(false);
     }
 
     if (password.match(/[!@#$%^&*(),.?":{}|<>]/)) {
@@ -69,74 +107,75 @@ const SetupBox = ({register}) => {
 
   return (
     <form className="w-[400px] max-w-full" onSubmit={handleSetupSubmit}>
-      <h1 className="text-2xl font-medium">Setup</h1>
-      <p className="text-gray-300 text-sm mb-4">
-        We will setup your dashboard in a few steps
-      </p>
-      <label htmlFor="username" className="text-sm font-medium">
-        What is your name?
-      </label>
-      <input
-        type="text"
-        name="name"
-        id="name"
-        placeholder="Enter your name"
-        className="w-full rounded py-2 px-4 mb-3 text-sm bg-gray-700/20"
-      />
-      <label htmlFor="username" className="text-sm font-medium">
-        Select a username (login)
-      </label>
-      <input
-        type="text"
-        name="username"
-        id="username"
-        placeholder="Enter your username"
-        className="w-full rounded py-2 px-4 mb-3 text-sm bg-gray-700/20"
-      />
-      <label htmlFor="password" className="text-sm font-medium">
-        Choose a password
-      </label>
-      <input
-        type="password"
-        name="password"
-        id="password"
-        placeholder="Password"
-        className="w-full rounded py-2 px-4 mb-3 text-sm bg-gray-700/20"
-        onChange={handlePasswordChange}
-      />
-      <p className="text-sm text-gray-300">Your password should:</p>
-      <ul className="list-none list-inside">
-        <li className="relative py-1 text-sm flex items-center gap-1">
-          <span
-            className={`w-4 h-4 flex border border-gray-300 rounded-full transition-all duration-500 ${
-              isPasswordLongEnough ? "bg-green-500" : "bg-white"
-            }`}
-          ></span>
-          Be at least 8 characters long
-        </li>
-        <li className="relative py-1 text-sm flex items-center gap-1">
-          <span
-            className={`w-4 h-4 flex border border-gray-300 rounded-full transition-all duration-500 ${
-              isPasswordNumber ? "bg-green-500" : "bg-white"
-            }`}
-          ></span>
-          Contain at least one number
-        </li>
-        <li className="relative py-1 text-sm flex items-center gap-1">
-          <span
-            className={`w-4 h-4 flex border border-gray-300 rounded-full transition-all duration-500 ${
-              isPasswordSpecial ? "bg-green-500" : "bg-white"
-            }`}
-          ></span>
-          Contain at least one special character
-        </li>
-      </ul>
-      <button
-        type="submit"
-        className="w-full bg-black hover:bg-neutral-900 text-white rounded-full py-4 text-sm mt-4"
-      >
-        Login
-      </button>
+      <CardHeader>
+        <CardTitle>Setup</CardTitle>
+        <CardDescription>
+          We will setup your dashboard in a few steps
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <Label htmlFor="username">What should we call you?</Label>
+        <Input
+          type="text"
+          name="name"
+          id="name"
+          placeholder="Enter your name"
+        />
+        <Label htmlFor="username">Select a username (your login)</Label>
+        <Input
+          type="text"
+          name="username"
+          id="username"
+          placeholder="Enter your username"
+          className={errors.username ? "border-red-500" : ""}
+        />
+        <Label htmlFor="password">Choose a nice password</Label>
+        <Input
+          type="password"
+          name="password"
+          id="password"
+          placeholder="Password"
+          onChange={handlePasswordChange}
+          className={errors.password ? "border-red-500" : ""}
+        />
+        <Label htmlFor="repeatpassword">Repeat the password</Label>
+        <Input
+          type="password"
+          name="repeatpassword"
+          id="repeatpassword"
+          placeholder="Password once more"
+          className={errors.repeat ? "border-red-500" : ""}
+          onChange={(e) => setPassword({ ...password, repeat: e.target.value })}
+        />
+        <p className="text-sm text-gray-300">Your password should:</p>
+        <ul className="list-none list-inside">
+          <li className="relative py-1 text-xs flex items-center gap-1">
+            <span
+              className={`w-4 h-4 flex border border-gray-300 rounded-full transition-all duration-500 ${
+                isPasswordLongEnough ? "bg-green-500 border-none" : "bg-transparent"
+              }`}
+            ></span>
+            Be at least 8 characters long
+          </li>
+          <li className="relative py-1 text-xs flex items-center gap-1">
+            <span
+              className={`w-4 h-4 flex border border-gray-300 rounded-full transition-all duration-500 ${
+                isPasswordSpecial ? "bg-green-500 border-none" : "bg-transparent"
+              }`}
+            ></span>
+            Contain at least one special character
+          </li>
+          <li className="relative py-1 text-xs flex items-center gap-1">
+            <span
+              className={`w-4 h-4 flex border border-gray-300 rounded-full transition-all duration-500 ${
+                (password.value === password.repeat && password.value != "") ? "bg-green-500 border-none" : "bg-transparent"
+              }`}
+            ></span>
+            Match the repeated password
+          </li>
+        </ul>
+        <Button type="submit">Set up</Button>
+      </CardContent>
     </form>
   );
 };

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowUpRightFromSquare,
+  faHandPointUp,
   faImages,
   faPenToSquare,
   faTrash,
@@ -40,13 +41,10 @@ import { deletePlant, modifyPlant, uploadImage } from "@/app/_actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { prepareChartData } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const PlantID = ({
-  plant_res,
-  readings_res,
-  params,
-  readingsAmmount,
-}) => {
+const PlantID = ({ plant_res, readings_res, params, readingsAmmount }) => {
   const [chartData, setChartData] = useState(null);
   const [plant, setPlant] = useState(null);
   const [readings, setReadings] = useState(null);
@@ -103,6 +101,11 @@ const PlantID = ({
   };
 
   useEffect(() => {
+    const accepted = ["image/png", "image/jpeg", "image/jpg"];
+    if (image && !accepted.includes(image.type)) {
+      toast.error("Please select an image with .png or .jpg extension");
+      return;
+    }
     if (image === null) return;
     updateImage();
   }, [image]);
@@ -119,7 +122,7 @@ const PlantID = ({
       message.moisture_value,
       "base64"
     ).toString();
-    const timestamp = moment(message.timestamp).subtract(2, "hours").format();
+    const timestamp = moment(message.timestamp).subtract(1, "hours").format();
     if (plant_id === params.id) {
       setReadings((prev) => {
         if (prev && typeof prev[Symbol.iterator] === "function") {
@@ -154,7 +157,7 @@ const PlantID = ({
                   style={
                     plant?.image
                       ? {
-                          background: `url(${process.env.NEXT_PUBLIC_API_HOST}/image/${plant?.image}) no-repeat center center/cover`,
+                          background: `url(http://leafbox.ddns.net:5000/uploads/${plant?.image}) no-repeat center center/cover`,
                         }
                       : null
                   }
@@ -196,8 +199,8 @@ const PlantID = ({
                       className="text-xs text-gray-400 font-normal"
                     >
                       Bound to{" "}
-                      <span className="italic font-bold">
-                        {plant?.device_name} slot {plant?.slot}
+                      <span className="italic font-bold underline">
+                        {plant?.device_name}, socket {plant?.slot}
                       </span>
                     </Link>
                   )}
@@ -235,6 +238,30 @@ const PlantID = ({
 
 const EditModal = ({ plant, updatePlant, setPlant }) => {
   const router = useRouter();
+  const [lowerThreshold, setLowerThreshold] = useState(
+    plant?.lower_threshold || 0
+  );
+  const [upperThreshold, setUpperThreshold] = useState(
+    plant?.upper_threshold || 100
+  );
+  const [readingDelayMult, setReadingDelayMult] = useState(plant?.reading_delay_mult || 1);
+
+  const handleInputChange = (event, type) => {
+    if (type === "lower") {
+      setLowerThreshold(event.target.value);
+    } else {
+      setUpperThreshold(event.target.value);
+    }
+  };
+
+  const handleSliderChange = (values) => {
+    setLowerThreshold(values[0]);
+    setUpperThreshold(values[1]);
+  };
+
+  useEffect(() => {
+    console.log(upperThreshold, lowerThreshold);
+  }, [upperThreshold, lowerThreshold]);
 
   const editPlant = async (e) => {
     e.preventDefault();
@@ -243,6 +270,8 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
     newPlant.species = e.target.species.value;
     newPlant.lower_threshold = e.target.lower_threshold.value;
     newPlant.upper_threshold = e.target.upper_threshold.value;
+    newPlant.reading_delay = e.target.reading_delay.value;
+    newPlant.reading_delay_mult = readingDelayMult;
     await updatePlant(newPlant);
     setPlant(newPlant);
   };
@@ -314,101 +343,134 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-4 items-center mt-4">
-            <Label htmlFor="lower_threshold" className="col-span-3">
-              Minimum moisture (%) <span className="text-red-400">*</span>
+          <hr />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="reading_delay" className="text-right col-span-2">
+              Reading frequency
             </Label>
             <Input
-              id="lower_threshold"
-              name="lower_threshold"
-              min={0}
-              max={100}
-              defaultValue={plant?.lower_threshold}
+              id="reading_delay"
+              defaultValue={plant?.reading_delay}
+              className="col-span-2"
             />
+
+            <RadioGroup
+              defaultValue={readingDelayMult}
+              onValueChange={(value) => setReadingDelayMult(value)}
+              className="flex flex-row justify-between col-span-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={1} id="r1" />
+                <Label htmlFor="r1">Seconds</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={60} id="r2" />
+                <Label htmlFor="r2">Minutes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={3600} id="r3" />
+                <Label htmlFor="r3">Hours</Label>
+              </div>
+            </RadioGroup>
           </div>
-          <Slider
-            defaultValue={[plant.lower_threshold]}
-            min={0}
-            max={100}
-            step={1}
-          />
-          <div className="grid grid-cols-4 gap-4 items-center mt-4">
-            <Label htmlFor="upper_threshold" className="col-span-3">
-              Maximum moisture (%) <span className="text-red-400">*</span>
-            </Label>
-            <Input
-              id="upper_threshold"
-              name="upper_threshold"
-              min={0}
-              max={100}
-              defaultValue={plant?.upper_threshold}
-            />
+          <hr />
+          <div className="grid grid-cols-4 gap-4 items-center">
+            <div className="col-span-4">
+              <p className="mb-4">Desired moisture (%)</p>
+              <Slider
+                value={[lowerThreshold, upperThreshold]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={handleSliderChange}
+              />
+            </div>
+            <div className="flex justify-between col-span-4 gap-3">
+              <Input
+                id="lower_threshold"
+                name="lower_threshold"
+                min={0}
+                max={100}
+                value={lowerThreshold}
+                onChange={(e) => handleInputChange(e, "lower")}
+              />
+              <Input
+                id="upper_threshold"
+                name="upper_threshold"
+                min={0}
+                max={100}
+                value={upperThreshold}
+                onChange={(e) => handleInputChange(e, "upper")}
+              />
+            </div>
           </div>
-          <Slider
-            defaultValue={[plant.upper_threshold]}
-            min={0}
-            max={100}
-            step={1}
-          />
         </div>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="destructive">Delete plant</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            {!plant?.device_name ? (
-              <>
-                <DialogHeader>
-                  <DialogTitle className={"text-red-500 font-bold"}>
-                    Warning!
-                  </DialogTitle>
-                  <DialogDescription>
-                    This is a destructive action. All the readings for the plant
-                    will be gone forever.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex items-center gap-3">
-                  <Checkbox id="sure"></Checkbox>
-                  <Label htmlFor="sure">
-                    I'm absolutely sure i want to delete this plant!
-                  </Label>
-                </div>
-                <DialogFooter>
-                  <Button variant="destructive" onClick={handleDeletePlant}>
-                    Delete the plant forever.
-                  </Button>
-                </DialogFooter>
-              </>
-            ) : (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Hold up, not so fast!</DialogTitle>
-                  <DialogDescription>
-                    You can't delete a plant that is bound to a device. Please
-                    clear the socket first.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Link href={`/devices/${plant?.device_id}`}>
-                    <Button>
-                      <FontAwesomeIcon
-                        icon={faArrowUpRightFromSquare}
-                        className="pr-2"
-                      />
-                      Device settings
+        <div className="flex justify-between">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="destructive">Delete plant</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              {!plant?.device_name ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className={"text-red-500 font-bold"}>
+                      Warning!
+                    </DialogTitle>
+                    <DialogDescription>
+                      This is a destructive action. All the readings for the
+                      plant will be gone forever.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex items-center gap-3">
+                    <Checkbox id="sure"></Checkbox>
+                    <Label htmlFor="sure">
+                      I'm absolutely sure i want to delete this plant!
+                    </Label>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="destructive" onClick={handleDeletePlant}>
+                      Delete the plant forever.
                     </Button>
-                  </Link>
-                </DialogFooter>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        <SheetFooter>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Hold up, not so fast!</DialogTitle>
+                    <DialogDescription>
+                      You can't delete a plant that is bound to a device. Please
+                      clear the socket first.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Link href={`/devices/${plant?.device_id}`}>
+                      <Button>
+                        <FontAwesomeIcon
+                          icon={faArrowUpRightFromSquare}
+                          className="pr-2"
+                        />
+                        Device settings
+                      </Button>
+                    </Link>
+                  </DialogFooter>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
           <SheetClose asChild>
             <Button type="submit">Save changes</Button>
           </SheetClose>
+        </div>
+        <SheetFooter>
+          {/* <Alert className="mt-4 border-red-500">
+            <FontAwesomeIcon icon={faHandPointUp} />
+            <AlertTitle className="text-red-500">Important note!</AlertTitle>
+            <AlertDescription>
+              Saving the configuration will restart the device.
+            </AlertDescription>
+          </Alert> */}
         </SheetFooter>
       </form>
     </SheetContent>

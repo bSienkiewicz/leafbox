@@ -29,7 +29,7 @@ export const getPlants = async () => {
 };
 
 export const deletePlant = async (plant) => {
-  const res = await fetch(url(`plants/${plant.id}`), {
+  const res = await fetch(url(`plants/${plant.plant_id}`), {
     method: "DELETE",
   });
 
@@ -86,7 +86,7 @@ export const getDevice = async (id) => {
 
 export const modifyDevice = async (device) => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/devices/${device.device_id}`,
+    url(`devices/${device.device_id}`),
     {
       method: "PUT",
       headers: {
@@ -101,7 +101,7 @@ export const modifyDevice = async (device) => {
 
 export const modifyPlant = async (plant) => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_HOST}${process.env.NEXT_PUBLIC_API_ROUTE}/plants/${plant.plant_id}`,
+    url(`plants/${plant.plant_id}`),
     {
       method: "PUT",
       headers: {
@@ -133,3 +133,45 @@ export const uploadImage = async (formData) => {
   const status = res.status;
   return { data, status };
 };
+
+
+export const login = async (data) => {
+  const res = await fetch(
+    url("login"),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+  const json = await res.json();
+  return json;
+}
+
+export const register = async(data) => {
+  const res = await fetch(
+    url("register"),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+  const json = await res.json();
+  return json;
+}
+
+export const checkIfUserRegistered = async() => {
+  const res = await fetch(
+    url("registered"),
+    {
+      method: "GET",
+    }
+  );
+  const json = await res.json();
+  return json;
+}

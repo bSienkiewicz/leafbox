@@ -1,3 +1,4 @@
+"use client";
 import Chart from "@/components/Charts/ChartComponent";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,10 @@ import { cn } from "@/lib/utils";
 import { faICursor } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import moment from "moment-timezone";
-import React from "react";
+import React, { useContext, useState } from "react";
+import { WebSocketContext } from "@/lib/MessageContext";
+import { Car } from "lucide-react";
+import toast from "react-hot-toast";
 
 const PlantDetails = ({
   plant,
@@ -23,9 +27,9 @@ const PlantDetails = ({
   setEditingDesc,
   updatePlant,
 }) => {
+  const { sendCommand } = useContext(WebSocketContext);
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
-  
-  
   const handleDescriptionChange = (event) => {
     const newPlant = { ...plant };
     newPlant.description = event.target.value;
@@ -33,22 +37,40 @@ const PlantDetails = ({
     setEditingDesc(false);
   };
 
+  const handleClick = (command, cooldown) => {
+    console.log(command);
+    setButtonsDisabled(true);
+    sendCommand(plant?.device_mac, command, {
+      plant_id: plant?.plant_id,
+    });
+
+    toast.promise(
+      new Promise((resolve) => setTimeout(resolve, cooldown)),
+      {
+        loading: command.charAt(0).toUpperCase() + command.slice(1) + " in progress...",
+        success: command.charAt(0).toUpperCase() + command.slice(1) + " done!",
+      }
+    );
+
+    setTimeout(() => {
+      setButtonsDisabled(false);
+    }, cooldown);
+  };
+
   return (
     <div className="flex flex-col md:grid grid-cols-7 grid-rows-[auto,1fr] h-full gap-3">
-      <div className="col-span-7 flex gap-3">
-        {readings?.[0]?.moisture_value && (
-          <Card className="p-6 text-center">
-            <div className="flex md:flex-col items-center md:items-start justify-between h-full gap-3">
-              <CardTitle>Moisture</CardTitle>
-              <p
-                className="text-3xl font-bold w-full"
-                style={{ color: plant?.color }}
-              >
-                {readings?.[0]?.moisture_value}%
-              </p>
-            </div>
-          </Card>
-        )}
+      <div className="col-span-7 flex gap-3 flex-col md:flex-row">
+        <Card className="p-6 text-center">
+          <div className="flex md:flex-col items-center md:items-start justify-between h-full gap-3">
+            <CardTitle>Moisture</CardTitle>
+            <p
+              className="text-3xl font-bold w-full"
+              style={{ color: plant?.color }}
+            >
+              {readings?.[0]?.moisture_value}%
+            </p>
+          </div>
+        </Card>
         <div className="relative flex-1">
           <Badge
             className={cn(
@@ -76,51 +98,78 @@ const PlantDetails = ({
             <div className="absolute top-3 right-3 rounded-full bg-black/20 backdrop-blur-lg px-2 py-1 text-white text-xs flex items-center gap-1 pointer-events-none z-30">
               <div className="relative h-3 w-3">
                 <span
-                  className={`animate-ping absolute rounded-full bg-blue-300 w-full h-full inline-flex opacity-70 dur`}
+                  className={`animate-ping absolute rounded-full w-full h-full inline-flex opacity-70 dur`}
+                  style={{ background: plant?.color }}
                 ></span>
                 <span
-                  className={`absolute rounded-full bg-blue-300 w-full h-full inline-flex`}
+                  className={`absolute rounded-full w-full h-full inline-flex`}
+                  style={{ background: plant?.color }}
                 ></span>
               </div>
               <p>LIVE</p>
             </div>
           )}
+          <div className="absolute bottom-1 right-5">
+            <p className="text-gray-600 text-xs">
+              Plant watering sheduled once every {plant?.reading_delay}{" "}
+              {plant?.reading_delay_mult == 1 && "seconds"}{" "}
+              {plant?.reading_delay_mult == 60 && "minutes"}{" "}
+              {plant?.reading_delay_mult == 3600 && "hours"}
+            </p>
+          </div>
           {chartData && (
             <Chart
               data={chartData}
-              options={chartOptions(plant?.lower_threshold, plant?.upper_threshold, plant?.color)}
+              options={chartOptions(
+                plant?.lower_threshold,
+                plant?.upper_threshold,
+                plant?.color
+              )}
             />
           )}
         </Card>
       </div>
       <div className="RIGHT col-span-2 flex flex-col gap-3">
-        {readings?.[0]?.moisture_value && (
-          <Card className="">
-            <CardHeader>
-              <CardTitle>Last watering</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold" style={{ color: plant?.color }}>
-                {moment
-                  .utc(readings?.[0]?.timestamp)
-                  .utcOffset(-120, true)
-                  .fromNow()}
-              </p>
-              <p className="text-sm text-gray-400">
-                {moment
-                  .utc(readings?.[0]?.timestamp)
-                  .utcOffset(-120, true)
-                  .format("HH:mm DD/MM/YY")}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        <Card className="">
+          <CardHeader>
+            <CardTitle>Last watering</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold" style={{ color: plant?.color }}>
+              {moment(readings?.[0]?.timestamp).add(1, "hours")
+                // .utcOffset(-120, true)
+                .fromNow()}
+            </p>
+            <p className="text-sm text-gray-400">
+              {moment(readings?.[0]?.timestamp).add(1, "hours").format("HH:mm DD/MM/YY")}
+            </p>
+          </CardContent>
+        </Card>
         <Card className="flex-1">
           <CardHeader>
             <CardTitle>Actions</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Button>Manual watering</Button>
+            <Button
+              {...(!plant?.device_name || buttonsDisabled
+                ? { disabled: true }
+                : {})}
+              onClick={() =>
+                handleClick("watering", 10000)
+              }
+            >
+              Manual watering
+            </Button>
+            <Button
+              {...(!plant?.device_name || buttonsDisabled
+                ? { disabled: true }
+                : {})}
+              onClick={() =>
+                handleClick("reading", 1000)
+              }
+            >
+              Force a reading
+            </Button>
             <Button disabled>Calibration</Button>
           </CardContent>
         </Card>
@@ -136,31 +185,31 @@ const chartOptions = (min, max, color) => {
     plugins: {
       legend: {
         display: false,
-        titleFont:{
+        titleFont: {
           size: 12,
           family: "Inter",
-          weight: "bold"
-        }
+          weight: "bold",
+        },
       },
       annotation: {
         annotations: {
           line1: {
-            type: 'line',
+            type: "line",
             yMin: min,
             yMax: min,
-            borderColor: 'rgb(255, 99, 132, 0.2)',
+            borderColor: "rgb(255, 99, 132, 0.2)",
             borderWidth: 2,
             borderDash: [5, 5],
           },
           line2: {
-            type: 'line',
+            type: "line",
             yMin: max,
             yMax: max,
-            borderColor: 'rgba(96, 100, 250, 0.2)',
+            borderColor: "rgba(96, 100, 250, 0.2)",
             borderWidth: 2,
             borderDash: [5, 5],
           },
-        }
+        },
       },
       tooltip: {
         position: "nearest",
@@ -182,15 +231,15 @@ const chartOptions = (min, max, color) => {
             return tooltipItem.formattedValue + "%";
           },
         },
-        titleFont:{
+        titleFont: {
           size: 12,
           family: "Inter",
-          weight: "bold"
+          weight: "bold",
         },
-        bodyFont:{
+        bodyFont: {
           size: 12,
-          weight: "bold"
-        }
+          weight: "bold",
+        },
       },
     },
     elements: {
@@ -215,7 +264,7 @@ const chartOptions = (min, max, color) => {
             chartArea.bottom
           );
           gradient.addColorStop(0, `${color}`);
-          gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+          gradient.addColorStop(1, `${color}00`);
           return gradient;
         },
       },
@@ -232,7 +281,7 @@ const chartOptions = (min, max, color) => {
       y: {
         grid: {
           lineWidth: 1,
-          borderDash: ctx => ctx.tick.value === 30 ? [8,4] : [],
+          borderDash: (ctx) => (ctx.tick.value === 30 ? [8, 4] : []),
         },
         min: 0,
         max: 100,
@@ -247,7 +296,7 @@ const chartOptions = (min, max, color) => {
       mode: "index",
       intersect: false,
     },
-  }
-}
+  };
+};
 
 export default PlantDetails;

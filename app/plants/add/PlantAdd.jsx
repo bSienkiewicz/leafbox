@@ -1,13 +1,6 @@
 "use client";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  faArrowLeft,
-} from "@fortawesome/free-solid-svg-icons";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -33,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const PlantAdd = () => {
   const router = useRouter();
@@ -41,16 +35,23 @@ const PlantAdd = () => {
     location: "",
     species: "",
     description: "",
-    lower_threshold: 0,
-    upper_threshold: 0,
-    temperature_min: 0,
+    lower_threshold: 40,
+    upper_threshold: 80,
+    reading_delay: 10,
+    reading_delay_mult: 60,
   });
   const [imageFile, setImageFile] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
+  const [readingDelayMult, setReadingDelayMult] = useState(60);
+  const [readingDelay, setReadingDelay] = useState(10);
 
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
   const [searchPlantInfo, setSearchPlantInfo] = useState(null);
+  const [plantInfoMoisture, setPlantInfoMoisture] = useState(null);
+
+  const theme = localStorage.getItem("theme") || "system";
+
 
   const handleInputChange = (event, type) => {
     setPlant((prevPlant) => ({
@@ -68,6 +69,10 @@ const PlantAdd = () => {
       toast.error("Couldn't find any plants");
     }
   };
+
+  useEffect(() => {
+    setPlant((prevPlant) => ({ ...prevPlant, reading_delay: readingDelay, reading_delay_mult: readingDelayMult }));
+  }, [readingDelay, readingDelayMult]);
 
   const handleExpertClick = (type, value) => {
     setPlant((prevPlant) => ({
@@ -88,12 +93,29 @@ const PlantAdd = () => {
   };
 
   useEffect(() => {
+    const moistureThresholds = {
+      D: { lower: 33, upper: 44 },
+      M: { lower: 55, upper: 80 },
+      W: { lower: 70, upper: 100 },
+    };
+
+    let moisture = searchPlantInfo?.moisture;
+    if (moisture) {
+      let lowerMoistureThreshold = moistureThresholds[moisture[0]].lower;
+      let higherMoistureThreshold =
+        moistureThresholds[moisture[moisture.length - 1]].upper;
+
+      setPlantInfoMoisture({
+        lowerMoistureThreshold,
+        higherMoistureThreshold,
+      });
+    }
     console.log(searchPlantInfo);
   }, [searchPlantInfo]);
 
   useEffect(() => {
     console.log(plant);
-    if (plant.image) {
+    if (plant.send) {
       const fetchNewPlant = async () => {
         await addPlant(plant)
           .then((res) => {
@@ -106,13 +128,18 @@ const PlantAdd = () => {
           })
           .catch((err) => {
             toast.error("Couldn't add plant");
-          });
-      };
+          });};
       fetchNewPlant();
     }
   }, [plant]);
 
   useEffect(() => {
+    const accepted = ["image/png", "image/jpeg", "image/jpg"];
+    if (imageFile && !accepted.includes(imageFile.type)) {
+      toast.error("Please select an image with .png or .jpg extension");
+      setImageFile(null);
+      return;
+    }
     if (!imageFile) {
       setImageUrl(null);
       return;
@@ -129,7 +156,9 @@ const PlantAdd = () => {
       plant.plant_name === "" ||
       plant.lower_threshold === null ||
       plant.upper_threshold === null ||
-      plant.upper_threshold < plant.lower_threshold
+      plant.upper_threshold < plant.lower_threshold ||
+      plant.reading_delay === null ||
+      plant.reading_delay <= 0
     ) {
       toast.error("There is an error with your input.");
       return;
@@ -139,8 +168,6 @@ const PlantAdd = () => {
       formData.append("image", imageFile);
       const res = await uploadImage(formData);
       if (res.status === 200) {
-        toast.success("Image uploaded");
-        console.log(res.data);
         setPlant((prevPlant) => ({
           ...prevPlant,
           image: res.data.image,
@@ -150,6 +177,10 @@ const PlantAdd = () => {
         toast.error("Couldn't upload image");
       }
     }
+    setPlant((prevPlant) => ({
+      ...prevPlant,
+      send: true,
+    }));
   };
 
   return (
@@ -195,7 +226,7 @@ const PlantAdd = () => {
             />
             <Label
               htmlFor="image"
-              className="w-full aspect-square cursor-pointer rounded-lg !bg-gray-900 mx-auto flex items-center text-center text-xs p-2 relative z-0"
+              className="w-1/2 md:w-full aspect-square cursor-pointer rounded-lg !bg-gray-900 mx-auto flex items-center text-center text-xs p-2 relative z-0"
               style={{ background: `url(${imageUrl}) center center/cover` }}
             >
               <input
@@ -203,14 +234,12 @@ const PlantAdd = () => {
                 className="hidden"
                 name="image"
                 id="image"
+                accept="image/jpg,image/jpeg,image/png"
                 onChange={(e) => setImageFile(e.target.files?.[0])}
               />
             </Label>
             {!imageFile ? (
-              <p className="text-sm">
-                <FontAwesomeIcon icon={faArrowLeft} className="pr-2" />
-                Add an image for this plant
-              </p>
+              <p className="text-sm">Add an image for this plant</p>
             ) : (
               <p className="text-sm text-green-200">
                 <Button onClick={() => setImageFile(null)}>
@@ -220,28 +249,13 @@ const PlantAdd = () => {
             )}
           </div>
         </Card>
-        <Card className={""}>
-          <CardHeader>
-            <CardTitle>Plant description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              name="desc"
-              id="desc"
-              rows={6}
-              className="w-full resize-none"
-              placeholder="Enter a description for this plant"
-              value={plant.description}
-              onChange={(e) => handleInputChange(e, "description")}
-            />
-          </CardContent>
-        </Card>
+
         <div className="grid grid-cols-12 gap-3">
-          <div className="col-span-4">
+          <div className="col-span-12 md:col-span-4">
             <Card className={"flex flex-col gap-3 p-6"}>
               <div className="">
-                <p className="text-sm text-gray-300 mb-3">
-                  Soil moisture <span className="text-red-500">*</span>
+                <p className="text-sm text-gray-400 mb-3">
+                  Soil moisture (%)<span className="text-red-500">*</span>
                 </p>
                 <div className="flex gap-2 items-center">
                   <input
@@ -270,22 +284,43 @@ const PlantAdd = () => {
                 </div>
               </div>
               <div className="">
-                <p className="text-sm text-gray-300 mb-3">
-                  Minimum Temperature
+                <p className="text-sm text-gray-400 mb-3">
+                  How often should the device check this plant's soil moisture?{" "}
+                  <span className="text-red-500">*</span>
                 </p>
-                <input
-                  type="number"
-                  className="bg-white/20 rounded-md px-3 py-1 text-md w-full"
-                  name="temperature_min"
-                  id="temperature_min"
-                  onChange={(e) => handleInputChange(e, "temperature_min")}
-                  value={plant.temperature_min}
-                  placeholder="Minimum temperature"
-                />
+                <div className="flex gap-3 w-full flex-col">
+                  <input
+                    type="number"
+                    className="bg-white/20 rounded-md px-3 py-1 text-md flex-1"
+                    name="reading_delay"
+                    id="reading_delay"
+                    onChange={(e) => setReadingDelay(e.target.value)}
+                    value={readingDelay}
+                    placeholder="10"
+                  />
+                  <RadioGroup
+                    defaultValue={readingDelayMult}
+                    className="flex flex-row"
+                    onValueChange={(e) => setReadingDelayMult(e)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value={1} id="r1" />
+                      <Label htmlFor="r1">Seconds</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value={60} id="r2" />
+                      <Label htmlFor="r2">Minutes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value={3600} id="r3" />
+                      <Label htmlFor="r3">Hours</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </div>
             </Card>
           </div>
-          <div className="col-span-8">
+          <div className="col-span-12 md:col-span-8">
             <Card className={"overflow-y-auto p-6"}>
               <div className={"flex flex-row justify-between mb-4"}>
                 <div className="flex flex-col">
@@ -385,9 +420,25 @@ const PlantAdd = () => {
                       </div>
                     )}
 
-                    {searchPlantInfo.moisture && (
-                      <div className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1">
-                        <span>Moisture: {searchPlantInfo.moisture}°C</span>
+                    {plantInfoMoisture?.lowerMoistureThreshold && (
+                      <div
+                        className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
+                        onClick={() => {
+                          handleExpertClick(
+                            "lower_threshold",
+                            plantInfoMoisture.lowerMoistureThreshold
+                          );
+                          handleExpertClick(
+                            "upper_threshold",
+                            plantInfoMoisture.higherMoistureThreshold
+                          );
+                        }}
+                      >
+                        <span>
+                          Recomended moisture:{" "}
+                          {plantInfoMoisture.lowerMoistureThreshold}% -{" "}
+                          {plantInfoMoisture.higherMoistureThreshold}%
+                        </span>
                       </div>
                     )}
 
@@ -395,15 +446,13 @@ const PlantAdd = () => {
                       <div
                         className="bg-white hover:bg-white/90 transition-all text-black rounded px-2 py-1 cursor-pointer"
                         onClick={() =>
-                          handleExpertClick(
-                            "temperature_min",
-                            searchPlantInfo.temperature_min
+                          handleAddToDescription(
+                            `Minimum temperature: ${searchPlantInfo.temperature_min}°C`
                           )
                         }
                       >
                         <span>
                           Minimum temperature: {searchPlantInfo.temperature_min}
-                          °C
                         </span>
                       </div>
                     )}
@@ -480,6 +529,22 @@ const PlantAdd = () => {
             </Card>
           </div>
         </div>
+        <Card className={""}>
+          <CardHeader>
+            <CardTitle>Plant description</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              name="desc"
+              id="desc"
+              rows={6}
+              className="w-full resize-none"
+              placeholder="Enter a description for this plant"
+              value={plant.description}
+              onChange={(e) => handleInputChange(e, "description")}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
