@@ -17,7 +17,7 @@ const page = async () => {
       return res.data;
     })
     .catch((err) => {
-      error = true;
+      error = err;
     });
 
   if (error) {
@@ -25,7 +25,7 @@ const page = async () => {
       <div className="w-full h-full flex justify-center items-center">
         <Error
           err={
-            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+            error
           }
           action={"refresh"}
         />
@@ -110,6 +110,9 @@ const page = async () => {
             ))}
           </div>
         )}
+        <pre>
+          <code>{JSON.stringify(plants, null, 2)}</code>
+        </pre>
       </div>
     );
   }

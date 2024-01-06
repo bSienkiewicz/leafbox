@@ -324,14 +324,14 @@ const PlantAdd = () => {
             <Card className={"overflow-y-auto p-6"}>
               <div className={"flex flex-row justify-between mb-4"}>
                 <div className="flex flex-col">
-                  <p className="font-medium">Plant Expert</p>
+                  <p className="font-medium">Find your plant</p>
                   <p className="text-gray-400 text-sm">
-                    Search for a plant to get to know your plants better!
+                    Search for your plant in the database
                   </p>
                 </div>
 
                 <Button onClick={() => setSearchDialogOpen(true)}>
-                  Search plant
+                  Search for a plant
                 </Button>
                 <Dialog
                   open={searchDialogOpen}

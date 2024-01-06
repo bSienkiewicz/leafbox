@@ -22,7 +22,7 @@ import toast from "react-hot-toast";
 const PlantDetails = ({
   plant,
   readings,
-  chartData,
+  readingsChartData,
   editingDesc,
   setEditingDesc,
   updatePlant,
@@ -117,9 +117,9 @@ const PlantDetails = ({
               {plant?.reading_delay_mult == 3600 && "hours"}
             </p>
           </div>
-          {chartData && (
+          {readingsChartData && (
             <Chart
-              data={chartData}
+              data={readingsChartData}
               options={chartOptions(
                 plant?.lower_threshold,
                 plant?.upper_threshold,
@@ -158,8 +158,9 @@ const PlantDetails = ({
                 handleClick("watering", 10000)
               }
             >
-              Manual watering
+              Single watering
             </Button>
+            <Button>Full watering</Button>
             <Button
               {...(!plant?.device_name || buttonsDisabled
                 ? { disabled: true }
@@ -170,7 +171,6 @@ const PlantDetails = ({
             >
               Force a reading
             </Button>
-            <Button disabled>Calibration</Button>
           </CardContent>
         </Card>
       </div>
@@ -291,6 +291,18 @@ const chartOptions = (min, max, color) => {
           },
         },
       },
+      // y1: {
+      //   grid: {
+      //     display: false,
+      //   },
+      //   min: 0,
+      //   max: 50,
+      //   ticks: {
+      //     callback: function (value, index, values) {
+      //       return value + "ºC";
+      //     },
+      //   },
+      // },
     },
     interaction: {
       mode: "index",

@@ -44,13 +44,18 @@ import { prepareChartData } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const PlantID = ({ plant_res, readings_res, params, readingsAmmount }) => {
-  const [chartData, setChartData] = useState(null);
+const PlantID = ({
+  plant_res,
+  readings_res,
+  params,
+  readingsAmmount,
+}) => {
+  const [readingsChartData, setReadingsChartData] = useState(null);
   const [plant, setPlant] = useState(null);
   const [readings, setReadings] = useState(null);
   const [editingDesc, setEditingDesc] = useState(false);
   const [image, setImage] = useState(null);
-  const message = useWsStore((s) => s.moisture);
+  const moistureMessage = useWsStore((s) => s.moisture);
 
   useEffect(() => {
     setPlant(plant_res);
@@ -111,30 +116,34 @@ const PlantID = ({ plant_res, readings_res, params, readingsAmmount }) => {
   }, [image]);
 
   useEffect(() => {
-    if (!readings) return;
-    setChartData(prepareChartData(readings));
+    if (readings)
+      setReadingsChartData(prepareChartData(readings));
+    else setReadingsChartData(prepareChartData(readings));
   }, [readings]);
 
   useEffect(() => {
-    if (message === null) return;
-    const plant_id = message.plant_id;
+    // decoding the WS message and updating the readings
+    if (moistureMessage === null) return;
+    const plant_id = moistureMessage.plant_id;
     const moisture_value = Buffer.from(
-      message.moisture_value,
+      moistureMessage.moisture_value,
       "base64"
     ).toString();
-    const timestamp = moment(message.timestamp).subtract(1, "hours").format();
+    const timestampMoisture = moment(moistureMessage.timestamp)
+      .subtract(1, "hours")
+      .format();
     if (plant_id === params.id) {
       setReadings((prev) => {
         if (prev && typeof prev[Symbol.iterator] === "function") {
           const newReadings = [...prev];
-          newReadings.unshift({ moisture_value, timestamp });
+          newReadings.unshift({ moisture_value, timestamp: timestampMoisture });
           if (newReadings.length > readingsAmmount) newReadings.pop();
           return newReadings;
         }
         return [];
       });
     }
-  }, [message]);
+  }, [moistureMessage]);
 
   return (
     plant &&
@@ -225,7 +234,7 @@ const PlantID = ({ plant_res, readings_res, params, readingsAmmount }) => {
           <PlantDetails
             plant={plant}
             readings={readings}
-            chartData={chartData}
+            readingsChartData={readingsChartData}
             editingDesc={editingDesc}
             setEditingDesc={setEditingDesc}
             updatePlant={updatePlant}
@@ -244,7 +253,9 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
   const [upperThreshold, setUpperThreshold] = useState(
     plant?.upper_threshold || 100
   );
-  const [readingDelayMult, setReadingDelayMult] = useState(plant?.reading_delay_mult || 1);
+  const [readingDelayMult, setReadingDelayMult] = useState(
+    plant?.reading_delay_mult || 1
+  );
 
   const handleInputChange = (event, type) => {
     if (type === "lower") {

@@ -52,6 +52,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { WebSocketContext } from "@/lib/MessageContext";
+import { Switch } from "@/components/ui/switch";
+import { useWsStore } from "@/store/zustand";
 
 const DeviceSettings = ({ plants, devices, params }) => {
   const router = useRouter();
@@ -59,13 +61,8 @@ const DeviceSettings = ({ plants, devices, params }) => {
   const [device, setDevice] = useState(null);
   const [plantToChange, setPlantToChange] = useState(null);
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
-  const [popversOpen, setPopoversOpen] = React.useState([
-    false,
-    false,
-    false,
-    false,
-  ]);
   const { sendCommand, calibrationMessage } = useContext(WebSocketContext);
+  const temperatureMessage = useWsStore((s) => s.temperature);
 
   const checkPlantsInUse = () => {
     const plantsInUse = {};
@@ -100,11 +97,25 @@ const DeviceSettings = ({ plants, devices, params }) => {
         });
         toast.success("Calibration successful");
       } else {
-        toast.error("Calibration failed. The sensor is either not connected or broken.");
+        toast.error(
+          "Calibration failed. The sensor is either not connected or broken."
+        );
       }
     }
     console.log(calibrationMessage);
   }, [calibrationMessage]);
+
+  
+  useEffect(() => {
+    // decoding the WS message and updating the readings
+    if (temperatureMessage === null) return;
+    const plant_id = temperatureMessage.plant_id;
+    const temperature_value = Buffer.from(
+      temperatureMessage.temperature_value,
+      "base64"
+    ).toString();
+    device.temperature = temperature_value;
+  }, [temperatureMessage]);
 
   useEffect(() => {
     devices.forEach((dev) => {
@@ -221,14 +232,19 @@ const DeviceSettings = ({ plants, devices, params }) => {
         </Title>
         <Card
           className={
-            "flex flex-col p-24 justify-center items-center font-medium"
+            "flex flex-col p-24 justify-center items-center font-medium relative"
           }
         >
           <p className="text-lg mb-0">{device["device_name"]}</p>
           <p className="text-sm">Located in {device["location"]}</p>
+          {Object.values(device).some(value => value === "temperature") && device.temperature != null && (
+            <div className="absolute top-3 right-3">
+              <span className="text-gray-500">Temperature:{" "}</span>{device.temperature}°C
+            </div>
+          )}
         </Card>
 
-        <div className="grid grid-cols-4 gap-3 !mt-0">
+        <div className="grid grid-rows-4 md:grid-cols-4 md:grid-rows-1 gap-3 !mt-0 ">
           {Array(4)
             .fill()
             .map((_, i) => {
@@ -241,105 +257,156 @@ const DeviceSettings = ({ plants, devices, params }) => {
 
               return (
                 <div className="flex flex-col items-center" key={i}>
-                  <div className="h-20 w-5 border-l-2 border-r-2 relative bg-neutral-900">
-                    <p className="absolute -top-6 text-xs text-gray-400 left-0 right-0 flex justify-center w-full whitespace-nowrap">
-                      Slot {i + 1}
+                  <div className="h-20 w-5 border-l-2 border-r-2 relative bg-neutral-900 flex items-center">
+                    <p className="absolute -top-14 text-xs text-gray-400 left-0 right-0 flex flex-col justify-center items-center gap-2 w-full whitespace-nowrap">
+                      Slot {i + 1}{" "}
+
+                      {i >= 2 && (
+                        <div className="flex items-center space-x-1">
+                          <Switch
+                            id={`switch-${i + 1}`}
+                            checked={
+                              device[`sensor_type_${i + 1}`] == "temperature"
+                            }
+                            onCheckedChange={(checked) => {
+                              setDevice((prev) => {
+                                const newDevice = { ...prev };
+                                if (checked) {
+                                  // If the user is trying to enable temperature sensor, disable all other sensors
+                                  for (let j = 1; j <= 4; j++) {
+                                    if (j !== i + 1) {
+                                      newDevice[`sensor_type_${j}`] = "soil";
+                                    }
+                                  }
+                                }
+                                newDevice[`sensor_type_${i + 1}`] = checked ? "temperature" : "soil";
+                                return newDevice;
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`switch-${i + 1}`}
+                            className="text-xs text-gray-400"
+                          >
+                            Temperature
+                          </Label>
+                        </div>
+                      )}
                     </p>
                   </div>
 
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Card
-                        className="flex flex-col w-full h-32 items-center justify-center rounded-md relative overflow-hidden cursor-pointer isolate"
-                        variant="outline"
-                        onClick={() => handlePlantSelect(i + 1)}
-                      >
-                        {plantName !== "Empty socket" && (
-                          <Link
-                            href={`/plants/${plant?.plant_id}`}
-                            className="absolute top-2 right-2"
+                  {device[`sensor_type_${i + 1}`] == "soil" ? (
+                    <>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Card
+                            className="flex flex-col w-full h-32 items-center justify-center rounded-md relative overflow-hidden cursor-pointer isolate"
+                            variant="outline"
+                            onClick={() => handlePlantSelect(i + 1)}
                           >
-                            <Button className="p-3">
-                              <FontAwesomeIcon icon={faSquareArrowUpRight} />
-                            </Button>
-                          </Link>
-                        )}
-                        {plantImage && (
-                          <div
-                            className="w-full h-full top-0 left-0 absolute -z-10 after:w-full after:h-full after:bg-black/40 after:absolute after:top-0 after:left-0"
-                            style={{
-                              background: `url(http://leafbox.ddns.net:5000/uploads/${plantImage}) center center / cover no-repeat`,
-                            }}
-                          ></div>
-                        )}
-                        <div
-                          className={`flex flex-col items-center justify-center ${
-                            plantName !== "Empty socket"
-                              ? "text-white"
-                              : "text-gray-400"
-                          } my-4`}
-                        >
-                          <p className="text-lg font-bold ">{plantName}</p>
-                          <p className="text-sm">{plantSpecies}</p>
-                        </div>
-                      </Card>
-                    </DialogTrigger>
-                    <RenderPlantModal
-                      plants={plants}
-                      i={i}
-                      handlePlantChange={handlePlantChange}
-                      plantsInUse={plantsInUse}
-                      deviceId={device.device_id}
-                      showOnlyAvailable={showOnlyAvailable}
-                      setShowOnlyAvailable={setShowOnlyAvailable}
-                    />
-                  </Dialog>
+                            {plantName !== "Empty socket" && (
+                              <Link
+                                href={`/plants/${plant?.plant_id}`}
+                                className="absolute top-2 right-2"
+                              >
+                                <Button className="p-3">
+                                  <FontAwesomeIcon
+                                    icon={faSquareArrowUpRight}
+                                  />
+                                </Button>
+                              </Link>
+                            )}
+                            {plantImage && (
+                              <div
+                                className="w-full h-full top-0 left-0 absolute -z-10 after:w-full after:h-full after:bg-black/40 after:absolute after:top-0 after:left-0"
+                                style={{
+                                  background: `url(http://leafbox.ddns.net:5000/uploads/${plantImage}) center center / cover no-repeat`,
+                                }}
+                              ></div>
+                            )}
+                            <div
+                              className={`flex flex-col items-center justify-center ${
+                                plantName !== "Empty socket"
+                                  ? "text-white"
+                                  : "text-gray-400"
+                              } my-4`}
+                            >
+                              <p className="text-lg font-bold ">{plantName}</p>
+                              <p className="text-sm">{plantSpecies}</p>
+                            </div>
+                          </Card>
+                        </DialogTrigger>
+                        <RenderPlantModal
+                          plants={plants}
+                          i={i}
+                          handlePlantChange={handlePlantChange}
+                          plantsInUse={plantsInUse}
+                          deviceId={device.device_id}
+                          showOnlyAvailable={showOnlyAvailable}
+                          setShowOnlyAvailable={setShowOnlyAvailable}
+                        />
+                      </Dialog>
 
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="item-1">
-                      <AccordionTrigger>Sensor config</AccordionTrigger>
-                      <AccordionContent>
-                        <Label htmlFor="moistureMin" className="text-sm">
-                          0% analog value
-                        </Label>
-                        <Input
-                          type="number"
-                          placeholder="1500"
-                          value={device[`sensor_config_${i + 1}`].split("|")[0]}
-                          onChange={(e) =>
-                            handleSensorConfigChange(e, 0, i + 1)
-                          }
-                        />
-                        <Label htmlFor="moistureMin" className="text-sm mt-3">
-                          100% analog value
-                        </Label>
-                        <Input
-                          type="number"
-                          placeholder="1000"
-                          value={device[`sensor_config_${i + 1}`].split("|")[1]}
-                          onChange={(e) =>
-                            handleSensorConfigChange(e, 1, i + 1)
-                          }
-                        />
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button className="mt-3">
-                              <FontAwesomeIcon
-                                icon={faCrosshairs}
-                                className="pr-2"
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="item-1">
+                          <AccordionTrigger>Sensor config</AccordionTrigger>
+                          <AccordionContent>
+                            <Label htmlFor="moistureMin" className="text-sm">
+                              0% analog value
+                            </Label>
+                            <Input
+                              type="number"
+                              placeholder="1500"
+                              value={
+                                device[`sensor_config_${i + 1}`].split("|")[0]
+                              }
+                              onChange={(e) =>
+                                handleSensorConfigChange(e, 0, i + 1)
+                              }
+                            />
+                            <Label
+                              htmlFor="moistureMin"
+                              className="text-sm mt-3"
+                            >
+                              100% analog value
+                            </Label>
+                            <Input
+                              type="number"
+                              placeholder="1000"
+                              value={
+                                device[`sensor_config_${i + 1}`].split("|")[1]
+                              }
+                              onChange={(e) =>
+                                handleSensorConfigChange(e, 1, i + 1)
+                              }
+                            />
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button className="mt-3">
+                                  <FontAwesomeIcon
+                                    icon={faCrosshairs}
+                                    className="pr-2"
+                                  />
+                                  <span className="hidden md:block">
+                                    Calibrate
+                                  </span>
+                                </Button>
+                              </DialogTrigger>
+                              <RenderCalibrationModal
+                                device={device}
+                                socket={i + 1}
+                                sendCommand={sendCommand}
                               />
-                              <span className="hidden md:block">Calibrate</span>
-                            </Button>
-                          </DialogTrigger>
-                          <RenderCalibrationModal
-                            device={device}
-                            socket={i + 1}
-                            sendCommand={sendCommand}
-                          />
-                        </Dialog>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                            </Dialog>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </>
+                  ) : (
+                    <Card className="h-full w-full flex justify-center items-center border-blue-300 border-dotted flex-col">
+                      <p className="font-bold">Temperature sensor</p>
+                    </Card>
+                  )}
                 </div>
               );
             })}
@@ -447,7 +514,7 @@ const RenderDeviceSheet = ({
   device,
   handleNameChange,
   handleLocationChange,
-  sendCommand
+  sendCommand,
 }) => {
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
@@ -455,18 +522,15 @@ const RenderDeviceSheet = ({
     setButtonsDisabled(true);
     sendCommand(device?.mac, "reboot");
 
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 10000)),
-      {
-        loading: `Restarting ${device?.device_name}`,
-        success: `${device?.device_name} restarted!`,
-      }
-    );
+    toast.promise(new Promise((resolve) => setTimeout(resolve, 10000)), {
+      loading: `Restarting ${device?.device_name}`,
+      success: `${device?.device_name} restarted!`,
+    });
 
     setTimeout(() => {
       setButtonsDisabled(false);
     }, 10000);
-  }
+  };
   return (
     <SheetContent>
       <SheetHeader>
@@ -499,14 +563,14 @@ const RenderDeviceSheet = ({
           />
         </div>
       </div>
-            <Button
-              variant="destructive"
-              {...(buttonsDisabled ? { disabled: true } : {})}
-              onClick={() => handleRestart()}
-            >
-              <FontAwesomeIcon icon={faRotateRight} className="pr-2" />
-              <span className="hidden md:block">Restart device</span>
-            </Button>
+      <Button
+        variant="destructive"
+        {...(buttonsDisabled ? { disabled: true } : {})}
+        onClick={() => handleRestart()}
+      >
+        <FontAwesomeIcon icon={faRotateRight} className="pr-2" />
+        <span className="hidden md:block">Restart device</span>
+      </Button>
 
       <SheetFooter>
         <SheetClose asChild>

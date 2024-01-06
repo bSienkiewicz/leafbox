@@ -20,14 +20,14 @@ const page = async () => {
       return res.data;
     })
     .catch((err) => {
-      error = true;
+      error = err;
     });
   const devices = await getDevices()
     .then((res) => {
       return res.data;
     })
     .catch((err) => {
-      error = true;
+      error = err;
     });
 
   if (error) {
@@ -35,7 +35,7 @@ const page = async () => {
       <div className="w-full h-full flex justify-center items-center">
         <Error
           err={
-            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+            error
           }
           action={"refresh"}
         />
@@ -97,9 +97,12 @@ const page = async () => {
                         <div
                           key={i}
                           className={`rounded-full h-8 w-8 border-dashed ${
-                            device[`plant_${i + 1}`] == null
-                              ? "border-gray-300 border-2"
-                              : "bg-green-300"
+                            device[`plant_${i + 1}`] !== null
+                              ? "bg-green-300"
+                              : "border-gray-300 border-2"
+                          } ${
+                            device[`sensor_type_${i + 1}`] == "temperature" &&
+                            "bg-blue-300 border-0"
                           }`}
                         ></div>
                       ))}
@@ -109,6 +112,9 @@ const page = async () => {
             ))}
           </div>
         )}
+        <div className="mt-4">
+        <QrCodeDialog opaque={true}/>
+        </div>
       </div>
     );
   }

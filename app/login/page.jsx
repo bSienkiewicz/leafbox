@@ -22,7 +22,7 @@ const page = async () => {
       step = userRegistered ? 1 : 2;
     })
     .catch((err) => {
-      error = true;
+      error = err;
       console.log("ERROR LOGIN")
     });
 
@@ -42,7 +42,7 @@ const page = async () => {
       <div className="w-full h-full flex justify-center items-center">
         <Error
           err={
-            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+            error
           }
           action={"refresh"}
         />

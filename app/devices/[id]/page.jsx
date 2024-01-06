@@ -12,7 +12,7 @@ const page = async ({ params }) => {
       return res.data;
     })
     .catch((err) => {
-      error = true;
+      error = err;
     });
 
   const plants = await getPlants()
@@ -20,7 +20,7 @@ const page = async ({ params }) => {
       return res.data;
     })
     .catch((err) => {
-      error = true;
+      error = err;
     });
 
   if (error) {
@@ -28,7 +28,7 @@ const page = async ({ params }) => {
       <div className="w-full h-full flex justify-center items-center">
         <Error
           err={
-            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+            error
           }
           action={"refresh"}
         />

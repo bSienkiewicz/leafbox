@@ -20,7 +20,7 @@ const page = async ({ params }) => {
     })
     .catch((err) => {
       error =
-        "Error loading data from the API. Is the API server running? Check the server logs for more info.";
+        err
     });
 
   if (error) {

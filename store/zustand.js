@@ -9,9 +9,11 @@ export const useTokenStore = create((set) => ({
 export const useWsStore = create((set) => ({
   status: null,
   moisture: null,
+  temperature: null,
   connected: false,
   setStatus: (status) => set({ status: status }),
   setMoisture: (moisture) => set({ moisture: moisture }),
+  setTemperature: (temperature) => set({ temperature: temperature }),
   setConnected: (connected) => set({ connected: connected }),
 }));
 

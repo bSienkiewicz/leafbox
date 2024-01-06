@@ -14,6 +14,7 @@ import { getReadings } from "./_actions";
 import RecentReadings from "@/components/Cards/RecentReadings";
 import moment from "moment";
 import Error from "@/components/Error";
+import Usage from "@/components/Cards/Usage";
 
 const Home = async () => {
   await useAuth();
@@ -23,7 +24,7 @@ const Home = async () => {
       return res.data;
     })
     .catch((err) => {
-      error = true;
+      error = err;
     });
 
   if (error) {
@@ -31,7 +32,7 @@ const Home = async () => {
       <div className="w-full h-full flex justify-center items-center">
         <Error
           err={
-            "Error loading data from the API. Is the API server running? Check the server logs for more info."
+            error
           }
           action={"refresh"}
         />
@@ -84,6 +85,10 @@ const Home = async () => {
           </Card>
           <div className="flex flex-col col-span-4 gap-3">
             <RecentReadings />
+          </div>
+          
+          <div className="flex flex-col col-span-4 gap-3">
+            <Usage />
           </div>
         </div>
       </>
