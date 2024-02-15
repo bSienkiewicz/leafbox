@@ -256,6 +256,7 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
   const [readingDelayMult, setReadingDelayMult] = useState(
     plant?.reading_delay_mult || 1
   );
+  const [watering, setWatering] = useState(plant?.watering || false);
 
   const handleInputChange = (event, type) => {
     if (type === "lower") {
@@ -275,6 +276,7 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
   }, [upperThreshold, lowerThreshold]);
 
   const editPlant = async (e) => {
+    console.log(e)
     e.preventDefault();
     const newPlant = { ...plant };
     newPlant.plant_name = e.target.name.value;
@@ -283,6 +285,8 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
     newPlant.upper_threshold = e.target.upper_threshold.value;
     newPlant.reading_delay = e.target.reading_delay.value;
     newPlant.reading_delay_mult = readingDelayMult;
+    newPlant.watering = watering;
+    newPlant.ml_per_pump = e.target.ml_per_pump.value;
     await updatePlant(newPlant);
     setPlant(newPlant);
   };
@@ -355,6 +359,27 @@ const EditModal = ({ plant, updatePlant, setPlant }) => {
             </Link>
           </div>
           <hr />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="watering" className="text-right">
+              Watering enabled
+            </Label>
+            <Checkbox
+              id="watering"
+              defaultChecked={watering}
+              className="col-span-3 justify-self-end"
+              onCheckedChange={(e) => setWatering(!watering)}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="ml_per_pump" className="text-right">
+              Watering amount (ml)
+            </Label>
+            <Input
+              id="ml_per_pump"
+              defaultValue={plant?.ml_per_pump}
+              className="col-span-3"
+            />
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="reading_delay" className="text-right col-span-2">
               Reading frequency

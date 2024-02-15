@@ -114,7 +114,7 @@ const DeviceSettings = ({ plants, devices, params }) => {
       temperatureMessage.temperature_value,
       "base64"
     ).toString();
-    device.temperature = temperature_value;
+    if (device) device.temperature = temperature_value;
   }, [temperatureMessage]);
 
   useEffect(() => {
@@ -161,6 +161,22 @@ const DeviceSettings = ({ plants, devices, params }) => {
     setDevice((prev) => {
       const newDevice = { ...prev };
       newDevice[`location`] = e.target.value;
+      return newDevice;
+    });
+  };
+
+  const handleEfficiencyChange = (e) => {
+    setDevice((prev) => {
+      const newDevice = { ...prev };
+      newDevice[`pump_efficiency`] = e.target.value;
+      return newDevice;
+    });
+  };
+
+  const handlePumpChange = (e) => {
+    setDevice((prev) => {
+      const newDevice = { ...prev };
+      newDevice[`pump`] = e.target.checked;
       return newDevice;
     });
   };
@@ -225,6 +241,8 @@ const DeviceSettings = ({ plants, devices, params }) => {
                 device={device}
                 handleNameChange={handleNameChange}
                 handleLocationChange={handleLocationChange}
+                handleEfficiencyChange={handleEfficiencyChange}
+                handlePumpChange={handlePumpChange}
                 sendCommand={sendCommand}
               />
             </Sheet>
@@ -258,7 +276,7 @@ const DeviceSettings = ({ plants, devices, params }) => {
               return (
                 <div className="flex flex-col items-center" key={i}>
                   <div className="h-20 w-5 border-l-2 border-r-2 relative bg-neutral-900 flex items-center">
-                    <p className="absolute -top-14 text-xs text-gray-400 left-0 right-0 flex flex-col justify-center items-center gap-2 w-full whitespace-nowrap">
+                    <div className="absolute -top-14 text-xs text-gray-400 left-0 right-0 flex flex-col justify-center items-center gap-2 w-full whitespace-nowrap">
                       Slot {i + 1}{" "}
 
                       {i >= 2 && (
@@ -292,7 +310,7 @@ const DeviceSettings = ({ plants, devices, params }) => {
                           </Label>
                         </div>
                       )}
-                    </p>
+                    </div>
                   </div>
 
                   {device[`sensor_type_${i + 1}`] == "soil" ? (
@@ -514,6 +532,8 @@ const RenderDeviceSheet = ({
   device,
   handleNameChange,
   handleLocationChange,
+  handleEfficiencyChange,
+  handlePumpChange,
   sendCommand,
 }) => {
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
@@ -540,26 +560,49 @@ const RenderDeviceSheet = ({
         </SheetDescription>
       </SheetHeader>
       <div className="flex flex-col gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
+        <div className="grid grid-cols-3 items-center gap-4">
           <Label htmlFor="name" className="text-right">
             Name <span className="text-red-400">*</span>
           </Label>
           <Input
             id="name"
-            className="col-span-3"
+            className="col-span-2"
             defaultValue={device?.device_name}
             onChange={(e) => handleNameChange(e)}
           />
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="username" className="text-right">
+        <div className="grid grid-cols-3 items-center gap-4">
+          <Label htmlFor="species" className="text-right">
             Location
           </Label>
           <Input
             id="species"
-            className="col-span-3"
+            className="col-span-2"
             defaultValue={device?.location}
             onChange={(e) => handleLocationChange(e)}
+          />
+        </div>
+        <div className="grid grid-cols-3 items-center justify-between gap-4">
+          <Label htmlFor="pump" className="text-right">
+            Attached pump
+          </Label>
+          <Checkbox
+            id="pump"
+            className="col-span-2 justify-self-end"
+            type="checkbox"
+            defaultChecked={device?.pump}
+            onChange={(e) => handlePumpChange(e)}
+          />
+        </div>
+        <div className="grid grid-cols-3 items-center justify-between gap-4">
+          <Label htmlFor="water" className="text-right">
+            Pump efficiency (L/h)
+          </Label>
+          <Input
+            id="water"
+            className="col-span-2 justify-self-end"
+            defaultValue={device?.pump_efficiency}
+            onChange={(e) => handleEfficiencyChange(e)}
           />
         </div>
       </div>

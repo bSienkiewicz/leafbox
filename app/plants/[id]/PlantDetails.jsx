@@ -14,10 +14,11 @@ import { cn } from "@/lib/utils";
 import { faICursor } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import moment from "moment-timezone";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { WebSocketContext } from "@/lib/MessageContext";
 import { Car } from "lucide-react";
 import toast from "react-hot-toast";
+import { useWsStore } from "@/store/zustand";
 
 const PlantDetails = ({
   plant,
@@ -29,6 +30,19 @@ const PlantDetails = ({
 }) => {
   const { sendCommand } = useContext(WebSocketContext);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
+  const [temperature, setTemperature] = useState(null);
+  const temperatureMessage = useWsStore((s) => s.temperature);
+
+  
+  useEffect(() => {
+    // decoding the WS message and updating the readings
+    if (temperatureMessage === null) return;
+    const temperature_value = Buffer.from(
+      temperatureMessage.temperature_value,
+      "base64"
+    ).toString();
+    setTemperature(temperature_value);
+  }, [temperatureMessage]);
 
   const handleDescriptionChange = (event) => {
     const newPlant = { ...plant };
@@ -64,13 +78,26 @@ const PlantDetails = ({
           <div className="flex md:flex-col items-center md:items-start justify-between h-full gap-3">
             <CardTitle>Moisture</CardTitle>
             <p
-              className="text-3xl font-bold w-full"
+              className="text-3xl font-bold"
               style={{ color: plant?.color }}
             >
               {readings?.[0]?.moisture_value}%
             </p>
           </div>
         </Card>
+        {temperature && (
+        <Card className="p-6 text-center">
+          <div className="flex md:flex-col items-center md:items-start justify-between h-full gap-3">
+            <CardTitle>Temperature</CardTitle>
+            <p
+              className="text-3xl font-bold"
+              style={{ color: plant?.color }}
+            >
+              {parseFloat(temperature).toFixed(1)}ºC
+            </p>
+          </div>
+        </Card>
+        )}
         <div className="relative flex-1">
           <Badge
             className={cn(

@@ -110,9 +110,6 @@ const page = async () => {
             ))}
           </div>
         )}
-        <pre>
-          <code>{JSON.stringify(plants, null, 2)}</code>
-        </pre>
       </div>
     );
   }
